@@ -11,7 +11,7 @@ type PostgresStorage struct {
 	db *sqlx.DB
 }
 
-func NewPostgesStorage() Storage {
+func NewPostgresStorage() Storage {
 	return &PostgresStorage{}
 }
 
@@ -25,6 +25,21 @@ func (s *PostgresStorage) Close() {
 	s.db.Close()
 }
 
-func (s *PostgresStorage) GetAllUsers() (*[]models.Users, error) {
-	return nil, nil
+func (s *PostgresStorage) CreateUser(user *models.User) (id int64, err error) {
+	row := s.db.QueryRow("INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id",
+		user.Name, user.Email, user.Password)
+	err = row.Scan(&id)
+	return
+}
+
+func (s *PostgresStorage) GetPasswordByEmail(email string) (string, error) {
+	var password string
+	err := s.db.Get(&password, "SELECT password FROM users WHERE email=$1", email)
+	return password, err
+}
+
+func (s *PostgresStorage) GetAllUsers() (*[]models.User, error) {
+	users := []models.User{}
+	err := s.db.Select(&users, "SELECT * FROM users")
+	return &users, err
 }
