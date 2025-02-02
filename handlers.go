@@ -3,22 +3,19 @@ package main
 import (
 	"finances-backend/models"
 	"finances-backend/services"
-	"os"
-	"strconv"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Handler struct {
+	authService services.AuthService
 	userService services.UserService
 	validate *validator.Validate
 }
 
-func NewHandler(userService services.UserService) *Handler {
-	return &Handler{userService: userService, validate: validator.New()}
+func NewHandler(as services.AuthService, us services.UserService) *Handler {
+	return &Handler{authService: as, userService: us, validate: validator.New()}
 }
 
 func (h *Handler) Register(c *fiber.Ctx) error {
@@ -33,7 +30,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	id, err := h.userService.CreateUser(&user)
+	id, err := h.authService.CreateUser(&user)
 	if err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -44,7 +41,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
-	logReq := LoginRequest{}
+	logReq := models.User{}
 	if err := c.BodyParser(&logReq); err != nil {
 		c.JSON(fiber.Map{"error": "wrong format"})
 		return c.SendStatus(fiber.StatusBadRequest)
@@ -54,49 +51,34 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-
-	// Throws Unauthorized error
-	if logReq.Name != "admin" || logReq.Password != "admin" {
+	
+	// Authenticate user
+	token, err := h.authService.AuthenticateUser(&logReq)
+	if err != nil {
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	expiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION"))
+	return c.JSON(fiber.Map{"token": token})
+}
+
+func (h *Handler) AuthorizeMiddleware(c *fiber.Ctx) error {
+	payload, err := h.authService.AuthorizeUser(c.Locals("user"))
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	// Create the Claims
-	claims := jwt.MapClaims{
-		"userid":  0,
-		"exp":   time.Now().Add(time.Hour * time.Duration(expiration)).Unix(),
-	}
-
-	// Create token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
-	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
-	}
-
-	return c.JSON(fiber.Map{"token": t})
+	
+	c.Locals("user_id", payload)
+	return c.Next()
 }
 
 func (h *Handler) Profile(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Hello, World!"})
-}
-
-func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
-	users, err := h.userService.GetAllUsers()
+	id := c.Locals("user_id").(int64)
+	user, err := h.userService.GetUserByID(id)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
-	c.JSON(*users)
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(user)
 }
 
-type LoginRequest struct {
-	Name     string `json:"name" validate:"required,min=5,max=50"`
-	Password string `json:"password" validate:"required,min=5,max=50"`
-}

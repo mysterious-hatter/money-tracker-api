@@ -5,11 +5,12 @@ import (
 	"finances-backend/storage"
 	"log"
 	"os"
+	"strconv"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/joho/godotenv"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	jwtware "github.com/gofiber/contrib/jwt"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -29,9 +30,17 @@ func main() {
 	)
 	defer storage.Close()
 
+	// Get JWT parameters
+	expiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION"))
+	if err != nil {
+		panic(err)
+	}
+	secret := os.Getenv("JWT_SECRET")
+
 	// Initialize services and a handler
+	authService := services.NewAuthService(storage, secret, expiration)
 	userService := services.NewUserService(storage)
-	handler := NewHandler(*userService)
+	handler := NewHandler(*authService, *userService)
 
 	// Initialize Fiber
 	app := fiber.New()
@@ -51,10 +60,8 @@ func main() {
             Key: []byte(os.Getenv("JWT_SECRET")),
         },
     }))
+	autorizedGroup.Use(handler.AuthorizeMiddleware)
     autorizedGroup.Get("/profile", handler.Profile)
-
-	// Routes
-	app.Get("/user", handler.GetAllUsers)
 
 	app.Listen(":3000")
 }

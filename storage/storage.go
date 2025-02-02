@@ -7,6 +7,7 @@ type Storage interface {
 	Close()
 	// User
 	CreateUser(user *models.User) (int64, error)
-	GetPasswordByEmail(email string) (string, error)
+	GetUserByID(id int64) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
 	GetAllUsers() (*[]models.User, error)
 }

@@ -32,10 +32,18 @@ func (s *PostgresStorage) CreateUser(user *models.User) (id int64, err error) {
 	return
 }
 
-func (s *PostgresStorage) GetPasswordByEmail(email string) (string, error) {
-	var password string
-	err := s.db.Get(&password, "SELECT password FROM users WHERE email=$1", email)
-	return password, err
+func (s *PostgresStorage) GetUserByID(id int64) (*models.User, error) {
+	user := models.User{}
+	res := s.db.QueryRowx("SELECT * FROM users WHERE id=$1", id)
+	err := res.StructScan(&user)
+	return &user, err
+}
+
+func (s *PostgresStorage) GetUserByEmail(email string) (*models.User, error) {
+	user := models.User{}
+	res := s.db.QueryRowx("SELECT * FROM users WHERE email=$1", email)
+	err := res.StructScan(&user)
+	return &user, err
 }
 
 func (s *PostgresStorage) GetAllUsers() (*[]models.User, error) {
