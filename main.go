@@ -40,7 +40,9 @@ func main() {
 	// Initialize services and a handler
 	authService := services.NewAuthService(storage, secret, expiration)
 	userService := services.NewUserService(storage)
-	handler := NewHandler(*authService, *userService)
+	walletService := services.NewWalletService(storage)
+
+	handler := NewHandler(*authService, *userService, *walletService)
 
 	// Initialize Fiber
 	app := fiber.New()
@@ -48,12 +50,14 @@ func main() {
         AllowOrigins: "*",
         AllowHeaders: "Origin, Content-Type, Accept, Authorization",
     }))
-    // Available for unauthorized users
+
+	// Routes:
+    // Public access
     publicGroup := app.Group("")
-	publicGroup.Post("/Register", handler.Register)
+	publicGroup.Post("/register", handler.Register)
     publicGroup.Post("/login", handler.Login)
 
-    // For private access
+    // Authorized access
     autorizedGroup := app.Group("")
     autorizedGroup.Use(jwtware.New(jwtware.Config{
         SigningKey: jwtware.SigningKey{
@@ -62,6 +66,9 @@ func main() {
     }))
 	autorizedGroup.Use(handler.AuthorizeMiddleware)
     autorizedGroup.Get("/profile", handler.Profile)
+	// Wallets
+	autorizedGroup.Post("/wallet", handler.CreateWallet)
 
+	// Start the server
 	app.Listen(":3000")
 }

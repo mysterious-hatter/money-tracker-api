@@ -51,3 +51,10 @@ func (s *PostgresStorage) GetAllUsers() (*[]models.User, error) {
 	err := s.db.Select(&users, "SELECT * FROM users")
 	return &users, err
 }
+
+func (s *PostgresStorage) CreateWallet(wallet *models.Wallet) (id int64, err error) {
+	row := s.db.QueryRow("INSERT INTO wallets (name, currency, ownerid) VALUES ($1, $2, $3) RETURNING id",
+		wallet.Name, wallet.Currency, wallet.OwnerID)
+	err = row.Scan(&id)
+	return
+}

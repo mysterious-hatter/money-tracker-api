@@ -11,11 +11,21 @@ import (
 type Handler struct {
 	authService services.AuthService
 	userService services.UserService
+	walletService services.WalletService
 	validate *validator.Validate
 }
 
-func NewHandler(as services.AuthService, us services.UserService) *Handler {
-	return &Handler{authService: as, userService: us, validate: validator.New()}
+func NewHandler(
+	as services.AuthService,
+	us services.UserService,
+	ws services.WalletService,
+) *Handler {
+	return &Handler{
+		authService: as,
+		userService: us,
+		walletService: ws,
+		validate: validator.New(),
+	}
 }
 
 func (h *Handler) Register(c *fiber.Ctx) error {
@@ -73,8 +83,8 @@ func (h *Handler) AuthorizeMiddleware(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Profile(c *fiber.Ctx) error {
-	id := c.Locals("user_id").(int64)
-	user, err := h.userService.GetUserByID(id)
+	userID := c.Locals("user_id").(int64)
+	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -82,3 +92,26 @@ func (h *Handler) Profile(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
+func (h *Handler) CreateWallet(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(int64)
+	// parse wallet's data
+	wallet := models.Wallet{}
+	if err := c.BodyParser(&wallet); err != nil {
+		c.JSON(fiber.Map{"error": "wrong format"})
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	// validate wallet
+	if err := h.validate.Struct(wallet); err != nil {
+		c.JSON(fiber.Map{"error": err.Error()})
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	wallet.OwnerID = userID
+	id, err := h.walletService.CreateWallet(&wallet)
+	if err != nil {
+		c.JSON(fiber.Map{"error": err.Error()})
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(fiber.Map{"id": id})
+}

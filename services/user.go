@@ -1,8 +1,9 @@
 package services
 
 import (
-	"finances-backend/storage"
 	"finances-backend/models"
+	"finances-backend/storage"
+	"log"
 )
 
 type UserService struct {
@@ -15,6 +16,7 @@ func NewUserService(st storage.Storage) *UserService {
 }
 
 func (us *UserService) GetUserByID(id int64) (*models.User, error) {
+	log.Println(us.storage)
 	user, err := us.storage.GetUserByID(id)
 	return user, err
 }
