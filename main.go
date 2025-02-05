@@ -68,6 +68,8 @@ func main() {
     autorizedGroup.Get("/profile", handler.Profile)
 	// Wallets
 	autorizedGroup.Post("/wallet", handler.CreateWallet)
+	autorizedGroup.Get("/wallet", handler.GetWallets)
+	autorizedGroup.Get("/wallet/:id", handler.GetWalletByID)
 
 	// Start the server
 	app.Listen(":3000")

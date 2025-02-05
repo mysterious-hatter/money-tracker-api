@@ -25,6 +25,7 @@ func (s *PostgresStorage) Close() {
 	s.db.Close()
 }
 
+// Users
 func (s *PostgresStorage) CreateUser(user *models.User) (id int64, err error) {
 	row := s.db.QueryRow("INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id",
 		user.Name, user.Email, user.Password)
@@ -52,9 +53,23 @@ func (s *PostgresStorage) GetAllUsers() (*[]models.User, error) {
 	return &users, err
 }
 
+// Wallets
 func (s *PostgresStorage) CreateWallet(wallet *models.Wallet) (id int64, err error) {
 	row := s.db.QueryRow("INSERT INTO wallets (name, currency, ownerid) VALUES ($1, $2, $3) RETURNING id",
 		wallet.Name, wallet.Currency, wallet.OwnerID)
 	err = row.Scan(&id)
 	return
+}
+
+func (s *PostgresStorage) GetAllWallets(userID int64) ([]models.Wallet, error) {
+	wallets := []models.Wallet{}
+	err := s.db.Select(&wallets, "SELECT * FROM wallets WHERE ownerid=$1", userID)
+	return wallets, err
+}
+
+func (s *PostgresStorage) GetWalletByID(walletID int64) (*models.Wallet, error) {
+	wallet := models.Wallet{}
+	res := s.db.QueryRowx("SELECT * FROM wallets WHERE id=$1", walletID)
+	err := res.StructScan(&wallet)
+	return &wallet, err
 }

@@ -12,4 +12,6 @@ type Storage interface {
 	GetAllUsers() (*[]models.User, error)
 	// Wallet
 	CreateWallet(wallet *models.Wallet) (int64, error)
+	GetAllWallets(userID int64) ([]models.Wallet, error)
+	GetWalletByID(walletID int64) (*models.Wallet, error)
 }

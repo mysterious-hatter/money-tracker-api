@@ -3,16 +3,17 @@ package main
 import (
 	"finances-backend/models"
 	"finances-backend/services"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
-	authService services.AuthService
-	userService services.UserService
+	authService   services.AuthService
+	userService   services.UserService
 	walletService services.WalletService
-	validate *validator.Validate
+	validate      *validator.Validate
 }
 
 func NewHandler(
@@ -21,10 +22,10 @@ func NewHandler(
 	ws services.WalletService,
 ) *Handler {
 	return &Handler{
-		authService: as,
-		userService: us,
+		authService:   as,
+		userService:   us,
 		walletService: ws,
-		validate: validator.New(),
+		validate:      validator.New(),
 	}
 }
 
@@ -42,8 +43,8 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 
 	id, err := h.authService.CreateUser(&user)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
-		return c.SendStatus(fiber.StatusInternalServerError)
+		c.JSON(fiber.Map{"error": "user already exists"})
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	c.JSON(fiber.Map{"id": id})
@@ -61,7 +62,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-	
+
 	// Authenticate user
 	token, err := h.authService.AuthenticateUser(&logReq)
 	if err != nil {
@@ -77,7 +78,7 @@ func (h *Handler) AuthorizeMiddleware(c *fiber.Ctx) error {
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	
+
 	c.Locals("user_id", payload)
 	return c.Next()
 }
@@ -114,4 +115,31 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"id": id})
+}
+
+func (h *Handler) GetWallets(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(int64)
+	wallets, err := h.walletService.GetAllWallets(userID)
+	if err != nil {
+		c.JSON(fiber.Map{"error": err.Error()})
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+	return c.JSON(wallets)
+}
+
+func (h *Handler) GetWalletByID(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(int64)
+	walletID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		c.JSON(fiber.Map{"error": "wrong format"})
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	wallet, err := h.walletService.GetWalletByID(int64(walletID), userID)
+	if err != nil {
+		c.JSON(fiber.Map{"error": err.Error()})
+		return c.SendStatus(fiber.StatusNotFound)
+	}
+
+	return c.JSON(wallet)
 }
