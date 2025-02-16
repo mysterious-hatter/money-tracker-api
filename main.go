@@ -22,13 +22,17 @@ func main() {
 
 	// Open database
  	storage := storage.NewPostgresStorage()
-	storage.Open(
+	err = storage.Open(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_USERNAME"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
 	defer storage.Close()
+
+	if err != nil {
+		log.Fatalf("Error opening database: %s", err)
+	}
 
 	// Get JWT parameters
 	expiration, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION"))
