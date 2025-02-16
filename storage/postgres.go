@@ -2,6 +2,7 @@ package storage
 
 import (
 	"finances-backend/models"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -42,7 +43,9 @@ func (s *PostgresStorage) GetUserByID(id int64) (*models.User, error) {
 
 func (s *PostgresStorage) GetUserByEmail(email string) (*models.User, error) {
 	user := models.User{}
+	fmt.Println(s.db)
 	res := s.db.QueryRowx("SELECT * FROM users WHERE email=$1", email)
+	fmt.Println(res)
 	err := res.StructScan(&user)
 	return &user, err
 }
