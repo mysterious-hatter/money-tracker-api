@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	ErrWalletNotFound  error       = errors.New("wallet not found")
+	ErrWalletNotFound        error = errors.New("wallet not found")
 	ErrWalletNotBelongToUser error = errors.New("requested wallet does not belong to the user")
-	ErrNoWalletsFound error        = errors.New("no wallets found")
-	ErrSomethingWentWrong error    = errors.New("something went wrong")
+	ErrNoWalletsFound        error = errors.New("no wallets found")
+	ErrSomethingWentWrong    error = errors.New("something went wrong")
 )
 
 type WalletService struct {
