@@ -1,8 +1,19 @@
-build:
-	@echo "Building application"
-	@go build -o app
-run:
-	@echo "Starting application"
-	@./app
+pull:
+	@git pull origin master
 
-dev: build run
+build_and_compose:
+	@docker compose up -d --build
+compose:
+	@docker compose up -d
+
+cleanup:
+	@echo "Cleaninig Docker cache"
+	@docker system prune --all --force
+
+update: pull build_and_compose cleanup
+
+restart: compose
+
+dev:
+	@echo "Running on Windows"
+	@go run main.go
