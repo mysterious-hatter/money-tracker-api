@@ -12,6 +12,6 @@ FROM scratch
 
 WORKDIR /app
 COPY --from=builder /build/fin-backend ./fin-backend
-COPY --from=builder /build/.env ./env
+COPY --from=builder /build/.env ./.env
 
 ENTRYPOINT ["/app/fin-backend"]
