@@ -16,4 +16,5 @@ restart: compose
 
 dev:
 	@echo "Running on Windows"
-	@go run main.go
+	@go build -o app
+	@./app
