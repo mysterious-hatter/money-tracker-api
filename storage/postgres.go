@@ -63,13 +63,30 @@ func (s *PostgresStorage) CreateWallet(wallet *models.Wallet) (id int64, err err
 
 func (s *PostgresStorage) GetAllWallets(userID int64) ([]models.Wallet, error) {
 	wallets := []models.Wallet{}
-	err := s.db.Select(&wallets, "SELECT * FROM wallets WHERE ownerid=$1", userID)
+	err := s.db.Select(&wallets,
+		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
+		 FROM wallets LEFT JOIN operations
+		 ON wallets.id=operations.walletid
+		 WHERE wallets.ownerid=$1
+		 GROUP BY wallets.id;`,
+		userID)
 	return wallets, err
 }
 
 func (s *PostgresStorage) GetWalletByID(walletID int64) (*models.Wallet, error) {
 	wallet := models.Wallet{}
-	res := s.db.QueryRowx("SELECT * FROM wallets WHERE id=$1", walletID)
+	res := s.db.QueryRowx(
+		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
+		 FROM wallets
+		 LEFT JOIN operations ON wallets.id=operations.walletid
+         WHERE wallets.id=$1
+         GROUP BY wallets.id;`,
+		walletID)
+
 	err := res.StructScan(&wallet)
+	if err != nil {
+		return nil, err
+	}
+
 	return &wallet, err
 }
