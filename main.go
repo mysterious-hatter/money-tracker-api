@@ -42,11 +42,13 @@ func main() {
 	secret := os.Getenv("JWT_SECRET")
 
 	// Initialize services and a handler
-	authService := services.NewAuthService(storage, secret, expiration)
-	userService := services.NewUserService(storage)
-	walletService := services.NewWalletService(storage)
+	authService      := services.NewAuthService(storage, secret, expiration)
+	userService      := services.NewUserService(storage)
+	walletService    := services.NewWalletService(storage)
+	categoryService  := services.NewCategoryService(storage)
+	operationService := services.NewOperationService(storage)
 
-	handler := NewHandler(*authService, *userService, *walletService)
+	handler := NewHandler(*authService, *userService, *walletService, *categoryService, *operationService)
 
 	// Initialize Fiber
 	app := fiber.New()
@@ -70,10 +72,26 @@ func main() {
     }))
 	autorizedGroup.Use(handler.AuthorizeMiddleware)
     autorizedGroup.Get("/profile", handler.Profile)
+
 	// Wallets
 	autorizedGroup.Post("/wallet", handler.CreateWallet)
 	autorizedGroup.Get("/wallet", handler.GetWallets)
 	autorizedGroup.Get("/wallet/:id", handler.GetWalletByID)
+	autorizedGroup.Patch("/wallet/:id", handler.UpdateWallet)
+	
+	// Categories
+	autorizedGroup.Post("/category", handler.CreateCategory)
+	autorizedGroup.Get("/category", handler.GetCategories)
+	autorizedGroup.Get("/category/:id", handler.GetCategoryByID)
+	autorizedGroup.Patch("/category/:id", handler.UpdateCategory)
+	autorizedGroup.Delete("/category/:id", handler.DeleteCategory)
+
+	// Operations
+	autorizedGroup.Post("/operation", handler.CreateOperation)
+	autorizedGroup.Get("/operation", handler.GetOperations)
+	autorizedGroup.Get("/operation/:id", handler.GetOperationByID)
+	autorizedGroup.Patch("/operation/:id", handler.UpdateOperation)
+	autorizedGroup.Delete("/operation/:id", handler.DeleteOperation)
 
 	// Start the server
 	app.Listen(":3000")

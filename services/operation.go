@@ -18,34 +18,46 @@ type OperationService struct {
 }
 
 func NewOperationService(st storage.Storage) *OperationService {
-	os := OperationService{st}
-	return &os
+	ops := OperationService{st}
+	return &ops
 }
 
-func (os *OperationService) CreateOperation(operation *models.Operation) (int64, error) {
-	id, err := os.storage.CreateOperation(operation)
+func (ops *OperationService) CreateOperation(operation *models.Operation, userID int64) (int64, error) {
+	// Check user's ownership of the wallet
+	err := ops.checkOwnershipByConnectedWallet(operation.WalletID, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := ops.storage.CreateOperation(operation)
 	if err != nil {
 		return 0, ErrUnableToCreate
 	}
 	return id, nil
 }
 
-func (os *OperationService) GetAllOperations(walletID int64) ([]models.Operation, error) {
-	operations, err := os.storage.GetOperationsByWalletID(walletID)
+func (ops *OperationService) GetOperationsByWalletID(walletID, userID int64) ([]models.Operation, error) {
+	// Check user's ownership of the wallet
+	err := ops.checkOwnershipByConnectedWallet(walletID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	operations, err := ops.storage.GetOperationsByWalletID(walletID)
 	if err != nil {
 		return nil, ErrNoOperationsFound
 	}
 	return operations, nil
 }
 
-func (os *OperationService) GetOperationByID(operationID int64, userID int64) (*models.Operation, error) {
-	operation, err := os.storage.GetOperationByID(operationID)
+func (ops *OperationService) GetOperationByID(operationID int64, userID int64) (*models.Operation, error) {
+	operation, err := ops.storage.GetOperationByID(operationID)
 	if err != nil {
 		return nil, ErrOperationNotFound
 	}
 
 	// Check user's ownership of the operation
-	err = os.checkOwnershipByConnectedWallet(operation.WalletID, userID)
+	err = ops.checkOwnershipByConnectedWallet(operation.WalletID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,14 +65,14 @@ func (os *OperationService) GetOperationByID(operationID int64, userID int64) (*
 	return operation, nil
 }
 
-func (os *OperationService) UpdateOperation(operation *models.Operation, userID int64) error {
-	// Check user's ownership of the operation
-	err := os.checkOwnershipByConnectedWallet(operation.WalletID, userID)
+func (ops *OperationService) UpdateOperation(operation *models.Operation, userID int64) error {
+	// Check user's ownership of the operation and if it exists
+	_, err := ops.GetOperationByID(operation.ID, userID)
 	if err != nil {
 		return err
 	}
 
-	err = os.storage.UpdateOperation(operation)
+	err = ops.storage.UpdateOperation(operation)
 	if err != nil {
 		return ErrUnableToUpdate
 	}
@@ -68,19 +80,14 @@ func (os *OperationService) UpdateOperation(operation *models.Operation, userID 
 	return nil
 }
 
-func (os *OperationService) DeleteOperation(operationID int64, userID int64) error {
-	operation, err := os.storage.GetOperationByID(operationID)
-	if err != nil {
-		return ErrOperationNotFound
-	}
-
-	// Check user's ownership of the operation
-	err = os.checkOwnershipByConnectedWallet(operation.WalletID, userID)
+func (ops *OperationService) DeleteOperation(operationID int64, userID int64) error {
+	// Check user's ownership of the operation and if it exists
+	_, err := ops.GetOperationByID(operationID, userID)
 	if err != nil {
 		return err
 	}
 
-	err = os.storage.DeleteOperation(operationID)
+	err = ops.storage.DeleteOperation(operationID)
 	if err != nil {
 		return ErrUnableToDelete
 	}
@@ -88,8 +95,8 @@ func (os *OperationService) DeleteOperation(operationID int64, userID int64) err
 	return nil
 }
 
-func (os *OperationService) checkOwnershipByConnectedWallet(walletID, userID int64) error {
-	connectedWallet, err := os.storage.GetWalletByID(walletID)
+func (ops *OperationService) checkOwnershipByConnectedWallet(walletID, userID int64) error {
+	connectedWallet, err := ops.storage.GetWalletByID(walletID)
 	if err != nil {
 		return ErrConnectedWalletNotFound
 	}

@@ -52,12 +52,13 @@ func (cs *CategoryService) GetCategoryByID(categoryID int64, userID int64) (*mod
 }
 
 func (cs *CategoryService) UpdateCategory(category *models.Category, userID int64) error {
-	// Check user's ownership of the category
-	if err := checkOwnership(category.OwnerID, userID); err != nil {
+	// Check user's ownership of the category and if it exists
+	_, err := cs.GetCategoryByID(category.ID, userID)
+	if err != nil {
 		return err
 	}
 
-	err := cs.storage.UpdateCategory(category)
+	err = cs.storage.UpdateCategory(category)
 	if err != nil {
 		return ErrUnableToUpdate
 	}
@@ -66,11 +67,13 @@ func (cs *CategoryService) UpdateCategory(category *models.Category, userID int6
 }
 
 func (cs *CategoryService) DeleteCategory(categoryID int64, userID int64) error {
-	if err := checkOwnership(categoryID, userID); err != nil {
+	// Check user's ownership of the category and if it exists
+	_, err := cs.GetCategoryByID(categoryID, userID)
+	if err != nil {
 		return err
 	}
 
-	err := cs.storage.DeleteCategory(categoryID)
+	err = cs.storage.DeleteCategory(categoryID)
 	if err != nil {
 		return ErrUnableToDelete
 	}

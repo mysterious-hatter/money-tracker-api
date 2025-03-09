@@ -51,12 +51,13 @@ func (ws *WalletService) GetWalletByID(walletID int64, userID int64) (*models.Wa
 }
 
 func (ws *WalletService) UpdateWallet(wallet *models.Wallet, userID int64) error {
-	// Check user's ownership of the wallet
-	if err := checkOwnership(wallet.OwnerID, userID); err != nil {
+	// Check user's ownership of the wallet and if it exists
+	_, err := ws.GetWalletByID(wallet.ID, userID)
+	if err != nil {
 		return err
 	}
 
-	err := ws.storage.UpdateWallet(wallet)
+	err = ws.storage.UpdateWallet(wallet)
 	if err != nil {
 		return ErrUnableToUpdate
 	}
