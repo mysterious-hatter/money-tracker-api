@@ -10,7 +10,6 @@ var (
 	ErrWalletNotFound        error = errors.New("wallet not found")
 	ErrWalletNotBelongToUser error = errors.New("requested wallet does not belong to the user")
 	ErrNoWalletsFound        error = errors.New("no wallets found")
-	ErrSomethingWentWrong    error = errors.New("something went wrong")
 )
 
 type WalletService struct {
@@ -25,7 +24,7 @@ func NewWalletService(st storage.Storage) *WalletService {
 func (ws *WalletService) CreateWallet(wallet *models.Wallet) (int64, error) {
 	id, err := ws.storage.CreateWallet(wallet)
 	if err != nil {
-		return 0, ErrSomethingWentWrong
+		return 0, ErrUnableToCreate
 	}
 	return id, err
 }
@@ -44,8 +43,25 @@ func (ws *WalletService) GetWalletByID(walletID int64, userID int64) (*models.Wa
 		return nil, ErrWalletNotFound
 	}
 
-	if wallet.OwnerID != userID {
-		return nil, ErrWalletNotBelongToUser
+	// Check user's ownership of the wallet
+	if err := checkOwnership(wallet.OwnerID, userID); err != nil {
+		return nil, err
 	}
 	return wallet, err
 }
+
+func (ws *WalletService) UpdateWallet(wallet *models.Wallet, userID int64) error {
+	// Check user's ownership of the wallet
+	if err := checkOwnership(wallet.OwnerID, userID); err != nil {
+		return err
+	}
+
+	err := ws.storage.UpdateWallet(wallet)
+	if err != nil {
+		return ErrUnableToUpdate
+	}
+	return err 
+}
+
+// Deletion of wallets is not forseen,
+// as it would lead to deletion all the connected operations.

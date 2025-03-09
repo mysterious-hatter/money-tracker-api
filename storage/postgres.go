@@ -78,8 +78,8 @@ func (s *PostgresStorage) GetWalletByID(walletID int64) (*models.Wallet, error) 
 	res := s.db.QueryRowx(
 		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
 		 FROM wallets
-		 LEFT JOIN operations ON wallets.id=operations.walletid
-         WHERE wallets.id=$1
+		 LEFT JOIN operations ON wallets.id = operations.walletid
+         WHERE wallets.id = $1
          GROUP BY wallets.id;`,
 		walletID)
 
@@ -89,4 +89,101 @@ func (s *PostgresStorage) GetWalletByID(walletID int64) (*models.Wallet, error) 
 	}
 
 	return &wallet, err
+}
+
+func (s *PostgresStorage) UpdateWallet(wallet *models.Wallet) error {
+	row := s.db.QueryRow(
+		`UPDATE wallets
+		 SET
+		 	name = COALESCE(NULLIF($1, ''), name), 
+		 	currency = COALESCE(NULLIF($2, ''), currency)
+		 WHERE id = $3
+		 RETURNING name, currency;`,
+		wallet.Name, wallet.Currency, wallet.ID)
+
+	err := row.Scan(&wallet.Name, &wallet.Currency)
+	return err
+}
+
+// Categories
+func (s *PostgresStorage) CreateCategory(category *models.Category) (id int64, err error) {
+	row := s.db.QueryRow("INSERT INTO categories (name, ownerid) VALUES ($1, $2) RETURNING id",
+		category.Name, category.OwnerID)
+	err = row.Scan(&id)
+	return
+}
+
+func (s *PostgresStorage) GetAllCategories(userID int64) ([]models.Category, error) {
+	categories := []models.Category{}
+	err := s.db.Select(&categories, "SELECT * FROM categories WHERE ownerid=$1", userID)
+	return categories, err
+}
+
+func (s *PostgresStorage) GetCategoryByID(categoryID int64) (*models.Category, error) {
+	category := models.Category{}
+	res := s.db.QueryRowx("SELECT * FROM categories WHERE id=$1", categoryID)
+	err := res.StructScan(&category)
+	return &category, err
+}
+
+func (s *PostgresStorage) UpdateCategory(category *models.Category) error {
+	row := s.db.QueryRow(
+		`UPDATE categories
+		 SET
+		 	name = COALESCE(NULLIF($1, ''), name)
+		 WHERE id=$2
+		 RETURNING name;`,
+		category.Name, category.ID)
+
+	err := row.Scan(&category.Name)
+	return err
+}
+
+func (s *PostgresStorage) DeleteCategory(categoryID int64) error {
+	_, err := s.db.Exec("DELETE FROM categories WHERE id=$1", categoryID)
+	return err
+}
+
+// Operations
+func (s *PostgresStorage) CreateOperation(operation *models.Operation) (id int64, err error) {
+	row := s.db.QueryRow(
+		`INSERT INTO operations (name, walletid, sum, date, categoryid) 
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		operation.Name, operation.WalletID, operation.Sum, operation.Date, operation.CategoryID)
+	err = row.Scan(&id)
+	return
+}
+
+func (s *PostgresStorage) GetOperationsByWalletID(walletID int64) ([]models.Operation, error) {
+	operations := []models.Operation{}
+	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1", walletID)
+	return operations, err
+}
+
+func (s *PostgresStorage) GetOperationByID(operationID int64) (*models.Operation, error) {
+	operation := models.Operation{}
+	res := s.db.QueryRowx("SELECT * FROM operations WHERE id=$1", operationID)
+	err := res.StructScan(&operation)
+	return &operation, err
+}
+
+func (s *PostgresStorage) UpdateOperation(operation *models.Operation) error {
+	row := s.db.QueryRow(
+		`UPDATE operations
+		 SET
+		 	name = COALESCE(NULLIF($1, ''), name),
+		 	sum = COALESCE(NULLIF($2, 0), sum),
+		 	date = COALESCE(NULLIF($3, ''), date),
+		 	categoryid = COALESCE(NULLIF($4, 0), categoryid)
+		 WHERE id=$5
+		 RETURNING name, sum, date, categoryid;`,
+		operation.Name, operation.Sum, operation.Date, operation.CategoryID, operation.ID)
+
+	err := row.Scan(&operation.Name, &operation.Sum, &operation.Date, &operation.CategoryID)
+	return err
+}
+
+func (s *PostgresStorage) DeleteOperation(operationID int64) error {
+	_, err := s.db.Exec("DELETE FROM operations WHERE id=$1", operationID)
+	return err
 }
