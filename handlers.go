@@ -4,9 +4,14 @@ import (
 	"finances-backend/models"
 	"finances-backend/services"
 	"strconv"
+	"errors"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+)
+
+var (
+	ErrWrongFormat error = errors.New("wrong format")
 )
 
 type Handler struct {
@@ -29,6 +34,7 @@ func NewHandler(
 		authService:   as,
 		userService:   us,
 		walletService: ws,
+		categoryService: cs,
 		validate:      validator.New(),
 	}
 }
@@ -36,13 +42,8 @@ func NewHandler(
 // Auth
 func (h *Handler) Register(c *fiber.Ctx) error {
 	user := models.User{}
-	if err := c.BodyParser(&user); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err := h.validate.Struct(user); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+	if err := h.parseBody(c, &user); err != nil {
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -58,12 +59,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 
 func (h *Handler) Login(c *fiber.Ctx) error {
 	logReq := models.User{}
-	if err := c.BodyParser(&logReq); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err := h.validate.Struct(logReq); err != nil {
+	if err := h.parseBody(c, &logReq); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -102,14 +98,9 @@ func (h *Handler) Profile(c *fiber.Ctx) error {
 // Wallets
 func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	// parse wallet's data
+
 	wallet := models.Wallet{}
-	if err := c.BodyParser(&wallet); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-	// validate wallet
-	if err := h.validate.Struct(wallet); err != nil {
+	if err := h.parseBody(c, &wallet); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -136,9 +127,9 @@ func (h *Handler) GetWallets(c *fiber.Ctx) error {
 
 func (h *Handler) GetWalletByID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	walletID, err := strconv.Atoi(c.Params("id"))
+	walletID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -153,19 +144,14 @@ func (h *Handler) GetWalletByID(c *fiber.Ctx) error {
 
 func (h *Handler) UpdateWallet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	walletID, err := strconv.Atoi(c.Params("id"))
+	walletID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	wallet := models.Wallet{}
-	if err := c.BodyParser(&wallet); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err := h.validate.Struct(wallet); err != nil {
+	if err := h.parseBody(c, &wallet); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -184,14 +170,8 @@ func (h *Handler) UpdateWallet(c *fiber.Ctx) error {
 // Categories
 func (h *Handler) CreateCategory(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	// parse category's data
 	category := models.Category{}
-	if err := c.BodyParser(&category); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-	// validate category
-	if err := h.validate.Struct(category); err != nil {
+	if err := h.parseBody(c, &category); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -203,7 +183,8 @@ func (h *Handler) CreateCategory(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(fiber.Map{"id": id})
+	c.JSON(fiber.Map{"id": id})
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (h *Handler) GetCategories(c *fiber.Ctx) error {
@@ -218,9 +199,9 @@ func (h *Handler) GetCategories(c *fiber.Ctx) error {
 
 func (h *Handler) GetCategoryByID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	categoryID, err := strconv.Atoi(c.Params("id"))
+	categoryID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -235,19 +216,14 @@ func (h *Handler) GetCategoryByID(c *fiber.Ctx) error {
 
 func (h *Handler) UpdateCategory(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	categoryID, err := strconv.Atoi(c.Params("id"))
+	categoryID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	category := models.Category{}
-	if err := c.BodyParser(&category); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err := h.validate.Struct(category); err != nil {
+	if err := h.parseBody(c, &category); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -265,9 +241,9 @@ func (h *Handler) UpdateCategory(c *fiber.Ctx) error {
 
 func (h *Handler) DeleteCategory(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	categoryID, err := strconv.Atoi(c.Params("id"))
+	categoryID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -283,14 +259,9 @@ func (h *Handler) DeleteCategory(c *fiber.Ctx) error {
 // Operations
 func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	// parse operation's data
+	
 	operation := models.Operation{}
-	if err := c.BodyParser(&operation); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-	// validate operation
-	if err := h.validate.Struct(operation); err != nil {
+	if err := h.parseBody(c, &operation); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -321,9 +292,9 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
-	operationID, err := strconv.Atoi(c.Params("id"))
+	operationID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -339,19 +310,14 @@ func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
 
 func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	operationID, err := strconv.Atoi(c.Params("id"))
+	operationID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	operation := models.Operation{}
-	if err := c.BodyParser(&operation); err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err := h.validate.Struct(operation); err != nil {
+	if err := h.parseBody(c, &operation); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
@@ -369,9 +335,9 @@ func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
 
 func (h *Handler) DeleteOperation(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	operationID, err := strconv.Atoi(c.Params("id"))
+	operationID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -382,4 +348,23 @@ func (h *Handler) DeleteOperation(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *Handler) parseID(c *fiber.Ctx) (int, error){
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return -1, ErrWrongFormat
+	}
+	return id, nil
+}
+
+func (h *Handler) parseBody(c *fiber.Ctx, out interface{}) error {
+	if err := c.BodyParser(out); err != nil {
+		return ErrWrongFormat
+	}
+
+	if err := h.validate.Struct(out); err != nil {
+		return ErrWrongFormat
+	}
+	return nil
 }
