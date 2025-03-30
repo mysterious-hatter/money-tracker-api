@@ -1,10 +1,10 @@
 package main
 
 import (
+	"errors"
 	"finances-backend/models"
 	"finances-backend/services"
 	"strconv"
-	"errors"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -20,22 +20,23 @@ type Handler struct {
 	walletService    services.WalletService
 	categoryService  services.CategoryService
 	operationSerivce services.OperationService
-	validate      *validator.Validate
+	validate         *validator.Validate
 }
 
 func NewHandler(
-	as  services.AuthService,
-	us  services.UserService,
-	ws  services.WalletService,
-	cs  services.CategoryService,
+	as services.AuthService,
+	us services.UserService,
+	ws services.WalletService,
+	cs services.CategoryService,
 	ops services.OperationService,
 ) *Handler {
 	return &Handler{
-		authService:   as,
-		userService:   us,
-		walletService: ws,
-		categoryService: cs,
-		validate:      validator.New(),
+		authService:      as,
+		userService:      us,
+		walletService:    ws,
+		categoryService:  cs,
+		operationSerivce: ops,
+		validate:         validator.New(),
 	}
 }
 
@@ -104,7 +105,7 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-	
+
 	// Check if both fields are provided
 	if len(wallet.Name) == 0 || len(wallet.Currency) == 0 {
 		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
@@ -271,7 +272,7 @@ func (h *Handler) DeleteCategory(c *fiber.Ctx) error {
 // Operations
 func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
-	
+
 	operation := models.Operation{}
 	if err := h.parseBody(c, &operation); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
@@ -290,10 +291,10 @@ func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 func (h *Handler) GetOperations(c *fiber.Ctx) error {
 	walletID, err := strconv.Atoi(c.Queries()["wallet_id"])
 	if err != nil {
-		c.JSON(fiber.Map{"error": "wrong format"})
+		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-	
+
 	userID := c.Locals("user_id").(int64)
 	operations, err := h.operationSerivce.GetOperationsByWalletID(int64(walletID), userID)
 	if err != nil {
@@ -362,7 +363,7 @@ func (h *Handler) DeleteOperation(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func (h *Handler) parseID(c *fiber.Ctx) (int, error){
+func (h *Handler) parseID(c *fiber.Ctx) (int, error) {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return -1, ErrWrongFormat

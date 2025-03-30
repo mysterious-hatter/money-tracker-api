@@ -173,7 +173,7 @@ func (s *PostgresStorage) UpdateOperation(operation *models.Operation) error {
 		 SET
 		 	name = COALESCE(NULLIF($1, ''), name),
 		 	sum = COALESCE(NULLIF($2, 0), sum),
-		 	date = COALESCE(NULLIF($3, ''), date),
+		 	date = COALESCE(NULLIF($3, '')::DATE, date),
 		 	categoryid = COALESCE(NULLIF($4, 0), categoryid)
 		 WHERE id=$5
 		 RETURNING name, sum, date, categoryid;`,
