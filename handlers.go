@@ -104,6 +104,12 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
+	
+	// Check if both fields are provided
+	if len(wallet.Name) == 0 || len(wallet.Currency) == 0 {
+		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
 
 	wallet.OwnerID = userID
 	id, err := h.walletService.CreateWallet(&wallet)
@@ -153,6 +159,12 @@ func (h *Handler) UpdateWallet(c *fiber.Ctx) error {
 	wallet := models.Wallet{}
 	if err := h.parseBody(c, &wallet); err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Check if at least one field is provided
+	if len(wallet.Name) == 0 && len(wallet.Currency) == 0 {
+		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -359,12 +371,15 @@ func (h *Handler) parseID(c *fiber.Ctx) (int, error){
 }
 
 func (h *Handler) parseBody(c *fiber.Ctx, out interface{}) error {
+	// Parse the request body into the struct
 	if err := c.BodyParser(out); err != nil {
 		return ErrWrongFormat
 	}
 
+	// Validate required fields
 	if err := h.validate.Struct(out); err != nil {
 		return ErrWrongFormat
 	}
+
 	return nil
 }
