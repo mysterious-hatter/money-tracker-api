@@ -6,5 +6,6 @@ type Operation struct {
 	WalletID   int64   `json:"wallet_id" field:"walletid"`
 	Sum        float64 `json:"sum" field:"sum"`
 	Date       string  `json:"date" validate:"omitempty,datetime=2006-01-02" field:"date"`
+	Place      string  `json:"place" validate:"omitempty,max=50" field:"place"`
 	CategoryID int64   `json:"category_id" field:"categoryid"`
 }

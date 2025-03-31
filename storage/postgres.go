@@ -147,9 +147,9 @@ func (s *PostgresStorage) DeleteCategory(categoryID int64) error {
 // Operations
 func (s *PostgresStorage) CreateOperation(operation *models.Operation) (id int64, err error) {
 	row := s.db.QueryRow(
-		`INSERT INTO operations (name, walletid, sum, date, categoryid) 
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		operation.Name, operation.WalletID, operation.Sum, operation.Date, operation.CategoryID)
+		`INSERT INTO operations (name, walletid, sum, date, place, categoryid) 
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		operation.Name, operation.WalletID, operation.Sum, operation.Date, operation.Place, operation.CategoryID)
 	err = row.Scan(&id)
 	return
 }
@@ -174,12 +174,13 @@ func (s *PostgresStorage) UpdateOperation(operation *models.Operation) error {
 		 	name = COALESCE(NULLIF($1, ''), name),
 		 	sum = COALESCE(NULLIF($2, 0), sum),
 		 	date = COALESCE(NULLIF($3, '')::DATE, date),
-		 	categoryid = COALESCE(NULLIF($4, 0), categoryid)
-		 WHERE id=$5
-		 RETURNING name, sum, date, categoryid;`,
-		operation.Name, operation.Sum, operation.Date, operation.CategoryID, operation.ID)
+			place = COALESCE(NULLIF($4, ''), place),
+		 	categoryid = COALESCE(NULLIF($5, 0), categoryid)
+		 WHERE id=$6
+		 RETURNING name, sum, date, place, categoryid;`,
+		operation.Name, operation.Sum, operation.Date, operation.Place, operation.CategoryID, operation.ID)
 
-	err := row.Scan(&operation.Name, &operation.Sum, &operation.Date, &operation.CategoryID)
+	err := row.Scan(&operation.Name, &operation.Sum, &operation.Date, &operation.Place, &operation.CategoryID)
 	return err
 }
 
