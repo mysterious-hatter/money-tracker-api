@@ -1,6 +1,9 @@
 package storage
 
-import "finances-backend/models"
+import (
+	"finances-backend/models"
+	"time"
+)
 
 type Storage interface {
 	Open(host, username, passsword, dbname string) error
@@ -30,6 +33,7 @@ type Storage interface {
 	// Operation
 	CreateOperation(operation *models.Operation) (int64, error)
 	GetOperationsByWalletID(walletID int64) ([]models.Operation, error)
+	GetOperationsSinceDateByWalletID(walletID int64, date time.Time) ([]models.Operation, error)
 	GetOperationByID(operationID int64) (*models.Operation, error)
 	UpdateOperation(operation *models.Operation) error
 	DeleteOperation(operationID int64) error

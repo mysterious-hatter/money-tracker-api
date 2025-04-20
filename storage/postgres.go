@@ -2,6 +2,7 @@ package storage
 
 import (
 	"finances-backend/models"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -159,6 +160,15 @@ func (s *PostgresStorage) GetOperationsByWalletID(walletID int64) ([]models.Oper
 	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1", walletID)
 	return operations, err
 }
+
+func (s *PostgresStorage) GetOperationsSinceDateByWalletID(walletID int64, date time.Time) ([]models.Operation, error) {
+	operations := []models.Operation{}
+	err := s.db.Select(&operations,
+		`SELECT * FROM operations WHERE walletid=$1 AND date >= $2`,
+		walletID, date)
+	return operations, err
+}
+
 
 func (s *PostgresStorage) GetOperationByID(operationID int64) (*models.Operation, error) {
 	operation := models.Operation{}

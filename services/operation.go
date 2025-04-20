@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"time"
 
 	"finances-backend/models"
 	"finances-backend/storage"
@@ -44,6 +45,20 @@ func (ops *OperationService) GetOperationsByWalletID(walletID, userID int64) ([]
 	}
 
 	operations, err := ops.storage.GetOperationsByWalletID(walletID)
+	if err != nil {
+		return nil, ErrNoOperationsFound
+	}
+	return operations, nil
+}
+
+func (ops *OperationService) GetOperationsSinceDateByWalletID(walletID, userID int64, date time.Time) ([]models.Operation, error) {
+	// Check user's ownership of the wallet
+	err := ops.checkOwnershipByConnectedWallet(walletID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	operations, err := ops.storage.GetOperationsSinceDateByWalletID(walletID, date)
 	if err != nil {
 		return nil, ErrNoOperationsFound
 	}

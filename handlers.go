@@ -5,6 +5,7 @@ import (
 	"finances-backend/models"
 	"finances-backend/services"
 	"strconv"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -30,13 +31,17 @@ func NewHandler(
 	cs services.CategoryService,
 	ops services.OperationService,
 ) *Handler {
+	validate := validator.New()
+	validate.RegisterValidation("nonzero", func(fl validator.FieldLevel) bool {
+		return fl.Field().Float() != 0
+	})
 	return &Handler{
 		authService:      as,
 		userService:      us,
 		walletService:    ws,
 		categoryService:  cs,
 		operationSerivce: ops,
-		validate:         validator.New(),
+		validate:         validate,
 	}
 }
 
@@ -295,8 +300,22 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
+	sinceParam := c.Queries()["since"]
+
 	userID := c.Locals("user_id").(int64)
-	operations, err := h.operationSerivce.GetOperationsByWalletID(int64(walletID), userID)
+
+	operations := []models.Operation{}
+	if len(sinceParam) > 9 { // DD-MM-YYYY
+		sinceDate, err := time.Parse("02-01-2006", sinceParam)
+		if err != nil {
+			c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		operations, err = h.operationSerivce.GetOperationsSinceDateByWalletID(int64(walletID), userID, sinceDate)
+	} else {
+		operations, err = h.operationSerivce.GetOperationsByWalletID(int64(walletID), userID)
+	}
+	
 	if err != nil {
 		c.JSON(fiber.Map{"error": err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
