@@ -12,8 +12,33 @@ import (
 )
 
 var (
-	ErrWrongFormat error = errors.New("wrong format")
+	ErrWrongFormat           error = errors.New("wrong format")
+	ErrAuthFailed  		     error = errors.New("authentication failed")
+	ErrCannotGetProfile      error = errors.New("cannot get profile")
+	// Wallets
+	ErrCannotCreateWallet    error = errors.New("cannot create wallet")
+	ErrCannotGetWallet       error = errors.New("cannot get wallet")
+	ErrCannotGetWallets      error = errors.New("cannot get wallets")
+	ErrCannotUpdateWallet    error = errors.New("cannot update wallet")
+	ErrCannotDeleteWallet    error = errors.New("cannot delete wallet")
+	// Categories
+	ErrCannotCreateCategory  error = errors.New("cannot create category")
+	ErrCannotGetCategory 	 error = errors.New("cannot get category")	
+	ErrCannotGetCategories   error = errors.New("cannot get categories")
+	ErrCannotUpdateCategory  error = errors.New("cannot update category")
+	ErrCannotDeleteCategory  error = errors.New("cannot delete category")
+	// Operations
+	ErrCannotCreateOperation error = errors.New("cannot create operation")
+	ErrCannotGetOperation    error = errors.New("cannot get operation")
+	ErrCannotGetOperations   error = errors.New("cannot get operations")
+	ErrCannotUpdateOperation error = errors.New("cannot update operation")
+	ErrCannotDeleteOperation error = errors.New("cannot delete operation")
 )
+
+type ErrorResponse struct {
+	Error       string `json:"error"`
+	Description string `json:"description"`
+}
 
 type Handler struct {
 	authService      services.AuthService
@@ -49,13 +74,13 @@ func NewHandler(
 func (h *Handler) Register(c *fiber.Ctx) error {
 	user := models.User{}
 	if err := h.parseBody(c, &user); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	id, err := h.authService.CreateUser(&user)
 	if err != nil {
-		c.JSON(fiber.Map{"error": "user already exists"})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -66,14 +91,14 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 func (h *Handler) Login(c *fiber.Ctx) error {
 	logReq := models.User{}
 	if err := h.parseBody(c, &logReq); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	// Authenticate user
 	token, err := h.authService.AuthenticateUser(&logReq)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrAuthFailed.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
@@ -83,6 +108,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 func (h *Handler) AuthorizeMiddleware(c *fiber.Ctx) error {
 	payload, err := h.authService.AuthorizeUser(c.Locals("user"))
 	if err != nil {
+		c.JSON(ErrorResponse{Error: ErrAuthFailed.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
@@ -95,7 +121,7 @@ func (h *Handler) Profile(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetProfile.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	return c.JSON(user)
@@ -107,20 +133,20 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 
 	wallet := models.Wallet{}
 	if err := h.parseBody(c, &wallet); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	// Check if both fields are provided
 	if len(wallet.Name) == 0 || len(wallet.Currency) == 0 {
-		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: "Not all required fields provided"})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	wallet.OwnerID = userID
 	id, err := h.walletService.CreateWallet(&wallet)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotCreateWallet.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -131,7 +157,7 @@ func (h *Handler) GetWallets(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	wallets, err := h.walletService.GetAllWallets(userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetWallets.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	return c.JSON(wallets)
@@ -141,13 +167,13 @@ func (h *Handler) GetWalletByID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	walletID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	wallet, err := h.walletService.GetWalletByID(int64(walletID), userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetWallet.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
@@ -158,26 +184,26 @@ func (h *Handler) UpdateWallet(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	walletID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	wallet := models.Wallet{}
 	if err := h.parseBody(c, &wallet); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	// Check if at least one field is provided
 	if len(wallet.Name) == 0 && len(wallet.Currency) == 0 {
-		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: "Not all required fields provided"})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	wallet.ID = int64(walletID)
 	err = h.walletService.UpdateWallet(&wallet, userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotUpdateWallet.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -190,14 +216,14 @@ func (h *Handler) CreateCategory(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	category := models.Category{}
 	if err := h.parseBody(c, &category); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	category.OwnerID = userID
 	id, err := h.categoryService.CreateCategory(&category)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotCreateCategory.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -209,7 +235,7 @@ func (h *Handler) GetCategories(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	categories, err := h.categoryService.GetAllCategories(userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetCategories.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	return c.JSON(categories)
@@ -219,13 +245,13 @@ func (h *Handler) GetCategoryByID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	categoryID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	category, err := h.categoryService.GetCategoryByID(int64(categoryID), userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetCategory.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
@@ -236,20 +262,20 @@ func (h *Handler) UpdateCategory(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	categoryID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	category := models.Category{}
 	if err := h.parseBody(c, &category); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	category.ID = int64(categoryID)
 	err = h.categoryService.UpdateCategory(&category, userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotUpdateCategory.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -261,13 +287,13 @@ func (h *Handler) DeleteCategory(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	categoryID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	err = h.categoryService.DeleteCategory(int64(categoryID), userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotDeleteCategory.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -280,13 +306,13 @@ func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 
 	operation := models.Operation{}
 	if err := h.parseBody(c, &operation); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	id, err := h.operationSerivce.CreateOperation(&operation, userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotCreateOperation.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -296,7 +322,7 @@ func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 func (h *Handler) GetOperations(c *fiber.Ctx) error {
 	walletID, err := strconv.Atoi(c.Queries()["wallet_id"])
 	if err != nil {
-		c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -308,7 +334,7 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 	if len(sinceParam) > 9 { // DD-MM-YYYY
 		sinceDate, err := time.Parse("02-01-2006", sinceParam)
 		if err != nil {
-			c.JSON(fiber.Map{"error": ErrWrongFormat.Error()})
+			c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 			return c.SendStatus(fiber.StatusBadRequest)
 		}
 		operations, err = h.operationSerivce.GetOperationsSinceDateByWalletID(int64(walletID), userID, sinceDate)
@@ -317,7 +343,7 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 	}
 	
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetOperations.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	return c.JSON(operations)
@@ -326,14 +352,14 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
 	operationID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	userID := c.Locals("user_id").(int64)
 	operation, err := h.operationSerivce.GetOperationByID(int64(operationID), userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotGetOperation.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
@@ -344,20 +370,20 @@ func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	operationID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	operation := models.Operation{}
 	if err := h.parseBody(c, &operation); err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	operation.ID = int64(operationID)
 	err = h.operationSerivce.UpdateOperation(&operation, userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotUpdateOperation.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -369,13 +395,13 @@ func (h *Handler) DeleteOperation(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int64)
 	operationID, err := h.parseID(c)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	err = h.operationSerivce.DeleteOperation(int64(operationID), userID)
 	if err != nil {
-		c.JSON(fiber.Map{"error": err.Error()})
+		c.JSON(ErrorResponse{Error: ErrCannotDeleteOperation.Error(), Description: err.Error()})
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -393,12 +419,12 @@ func (h *Handler) parseID(c *fiber.Ctx) (int, error) {
 func (h *Handler) parseBody(c *fiber.Ctx, out interface{}) error {
 	// Parse the request body into the struct
 	if err := c.BodyParser(out); err != nil {
-		return ErrWrongFormat
+		return err
 	}
 
 	// Validate required fields
 	if err := h.validate.Struct(out); err != nil {
-		return ErrWrongFormat
+		return err
 	}
 
 	return nil
