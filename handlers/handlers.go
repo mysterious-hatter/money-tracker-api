@@ -12,6 +12,8 @@ import (
 var (
 	ErrWrongFormat      error = errors.New("wrong format")
 	ErrAuthFailed       error = errors.New("authentication failed")
+	// Users
+	ErrCannotCreateUser error = errors.New("cannot create user")
 	ErrCannotGetProfile error = errors.New("cannot get profile")
 	// Wallets
 	ErrCannotCreateWallet error = errors.New("cannot create wallet")
@@ -88,4 +90,36 @@ func (h *Handler) parseBody(c *fiber.Ctx, out interface{}) error {
 	}
 
 	return nil
+}
+
+func (h *Handler) send(c *fiber.Ctx, statusCode int, data interface{}) error {
+	if data == nil {
+		return c.SendStatus(statusCode)
+	}
+	return c.Status(statusCode).JSON(data)
+}
+
+func (h *Handler) sendError(c *fiber.Ctx, err error, description string) error {
+	c.JSON(ErrorResponse{Error: err.Error(), Description: description})
+	var statusCode int
+	
+	switch err {
+	case ErrWrongFormat:
+		statusCode = fiber.StatusBadRequest
+	case ErrAuthFailed:
+		statusCode = fiber.StatusUnauthorized
+	case ErrCannotGetProfile:
+		statusCode = fiber.StatusInternalServerError
+	case services.ErrAccessDenied:
+		statusCode = fiber.StatusForbidden
+	case services.ErrCategoryNotFound, services.ErrWalletNotFound, services.ErrOperationNotFound:
+		statusCode = fiber.StatusNotFound
+	// Maybe these errors will be removed in the future
+	case services.ErrNoCategoriesFound, services.ErrNoWalletsFound, services.ErrNoOperationsFound:
+		statusCode = fiber.StatusNotFound
+	default:
+		statusCode = fiber.StatusInternalServerError
+	}
+
+	return c.Status(statusCode).JSON(ErrorResponse{Error: err.Error(), Description: description})
 }
