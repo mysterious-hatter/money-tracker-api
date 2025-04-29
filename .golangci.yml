@@ -1,6 +1,7 @@
 version: "2"
 linters:
   enable:
+    - asciicheck # check for non-ascii characters
     - gocritic
     - govet
     - ineffassign

@@ -34,9 +34,11 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 
 	userID := c.Locals("userId").(int64)
 
-	operations := []models.Operation{}
+	var operations []models.Operation
+
 	if len(sinceParam) > 9 { // DD-MM-YYYY
-		sinceDate, err := time.Parse("02-01-2006", sinceParam)
+		var sinceDate time.Time
+		sinceDate, err = time.Parse("02-01-2006", sinceParam)
 		if err != nil {
 			return h.sendError(c, ErrWrongFormat, err)
 		}

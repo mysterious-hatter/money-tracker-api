@@ -11,24 +11,25 @@ import (
 
 var (
 	// Common
-	ErrInternalServerError   error = errors.New("internal server error")
-	ErrWrongFormat           error = errors.New("wrong format")
-	ErrAuthFailed            error = errors.New("authentication failed")
+	ErrInternalServerError          error = errors.New("internal server error")
+	ErrNotAllRequiredFieldsProvided error = errors.New("not all required fields provided")
+	ErrWrongFormat                  error = errors.New("wrong format")
+	ErrAuthFailed                   error = errors.New("authentication failed")
 	// Users
-	ErrCannotCreateUser      error = errors.New("cannot create user")
-	ErrCannotGetProfile      error = errors.New("cannot get profile")
+	ErrCannotCreateUser error = errors.New("cannot create user")
+	ErrCannotGetProfile error = errors.New("cannot get profile")
 	// Wallets
-	ErrCannotCreateWallet    error = errors.New("cannot create wallet")
-	ErrCannotGetWallet       error = errors.New("cannot get wallet")
-	ErrCannotGetWallets      error = errors.New("cannot get wallets")
-	ErrCannotUpdateWallet    error = errors.New("cannot update wallet")
-	ErrCannotDeleteWallet    error = errors.New("cannot delete wallet")
+	ErrCannotCreateWallet error = errors.New("cannot create wallet")
+	ErrCannotGetWallet    error = errors.New("cannot get wallet")
+	ErrCannotGetWallets   error = errors.New("cannot get wallets")
+	ErrCannotUpdateWallet error = errors.New("cannot update wallet")
+	ErrCannotDeleteWallet error = errors.New("cannot delete wallet")
 	// Categories
-	ErrCannotCreateCategory  error = errors.New("cannot create category")
-	ErrCannotGetCategory     error = errors.New("cannot get category")
-	ErrCannotGetCategories   error = errors.New("cannot get categories")
-	ErrCannotUpdateCategory  error = errors.New("cannot update category")
-	ErrCannotDeleteCategory  error = errors.New("cannot delete category")
+	ErrCannotCreateCategory error = errors.New("cannot create category")
+	ErrCannotGetCategory    error = errors.New("cannot get category")
+	ErrCannotGetCategories  error = errors.New("cannot get categories")
+	ErrCannotUpdateCategory error = errors.New("cannot update category")
+	ErrCannotDeleteCategory error = errors.New("cannot delete category")
 	// Operations
 	ErrCannotCreateOperation error = errors.New("cannot create operation")
 	ErrCannotGetOperation    error = errors.New("cannot get operation")
@@ -65,7 +66,7 @@ func NewHandler(
 	if err != nil {
 		panic("failed to register custom validation: " + err.Error())
 	}
-	
+
 	return &Handler{
 		authService:      as,
 		userService:      us,
