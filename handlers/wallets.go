@@ -75,5 +75,5 @@ func (h *Handler) UpdateWallet(c *fiber.Ctx) error {
 		return h.sendError(c, ErrCannotUpdateWallet, err)
 	}
 
-	return h.send(c, fiber.StatusOK, nil)
+	return h.send(c, fiber.StatusOK, wallet)
 }
