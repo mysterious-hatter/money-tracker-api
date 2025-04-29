@@ -77,7 +77,7 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) parseID(c *fiber.Ctx) (int, error) {
+func (h *Handler) parseId(c *fiber.Ctx) (int, error) {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return -1, ErrWrongFormat

@@ -44,7 +44,7 @@ func (as *AuthService) AuthenticateUser(loginData *models.User) (string, error) 
 
 	// Create the Claims
 	claims := jwt.MapClaims{
-		"id":  user.ID,
+		"id":  user.Id,
 		"exp": time.Now().Add(time.Hour * time.Duration(as.jwtExpiration)).Unix(),
 	}
 

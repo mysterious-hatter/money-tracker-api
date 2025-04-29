@@ -34,7 +34,7 @@ func (s *PostgresStorage) CreateUser(user *models.User) (id int64, err error) {
 	return
 }
 
-func (s *PostgresStorage) GetUserByID(id int64) (*models.User, error) {
+func (s *PostgresStorage) GetUserById(id int64) (*models.User, error) {
 	user := models.User{}
 	res := s.db.QueryRowx("SELECT * FROM users WHERE id=$1", id)
 	err := res.StructScan(&user)
@@ -57,12 +57,12 @@ func (s *PostgresStorage) GetAllUsers() (*[]models.User, error) {
 // Wallets
 func (s *PostgresStorage) CreateWallet(wallet *models.Wallet) (id int64, err error) {
 	row := s.db.QueryRow("INSERT INTO wallets (name, currency, ownerid) VALUES ($1, $2, $3) RETURNING id",
-		wallet.Name, wallet.Currency, wallet.OwnerID)
+		wallet.Name, wallet.Currency, wallet.OwnerId)
 	err = row.Scan(&id)
 	return
 }
 
-func (s *PostgresStorage) GetAllWallets(userID int64) ([]models.Wallet, error) {
+func (s *PostgresStorage) GetAllWallets(userId int64) ([]models.Wallet, error) {
 	wallets := []models.Wallet{}
 	err := s.db.Select(&wallets,
 		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
@@ -70,11 +70,11 @@ func (s *PostgresStorage) GetAllWallets(userID int64) ([]models.Wallet, error) {
 		 ON wallets.id=operations.walletid
 		 WHERE wallets.ownerid=$1
 		 GROUP BY wallets.id;`,
-		userID)
+		userId)
 	return wallets, err
 }
 
-func (s *PostgresStorage) GetWalletByID(walletID int64) (*models.Wallet, error) {
+func (s *PostgresStorage) GetWalletById(walletId int64) (*models.Wallet, error) {
 	wallet := models.Wallet{}
 	res := s.db.QueryRowx(
 		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
@@ -82,7 +82,7 @@ func (s *PostgresStorage) GetWalletByID(walletID int64) (*models.Wallet, error) 
 		 LEFT JOIN operations ON wallets.id = operations.walletid
          WHERE wallets.id = $1
          GROUP BY wallets.id;`,
-		walletID)
+		walletId)
 
 	err := res.StructScan(&wallet)
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *PostgresStorage) UpdateWallet(wallet *models.Wallet) error {
 		 	currency = COALESCE(NULLIF($2, ''), currency)
 		 WHERE id = $3
 		 RETURNING name, currency;`,
-		wallet.Name, wallet.Currency, wallet.ID)
+		wallet.Name, wallet.Currency, wallet.Id)
 
 	err := row.Scan(&wallet.Name, &wallet.Currency)
 	return err
@@ -109,20 +109,20 @@ func (s *PostgresStorage) UpdateWallet(wallet *models.Wallet) error {
 // Categories
 func (s *PostgresStorage) CreateCategory(category *models.Category) (id int64, err error) {
 	row := s.db.QueryRow("INSERT INTO categories (name, ownerid) VALUES ($1, $2) RETURNING id",
-		category.Name, category.OwnerID)
+		category.Name, category.OwnerId)
 	err = row.Scan(&id)
 	return
 }
 
-func (s *PostgresStorage) GetAllCategories(userID int64) ([]models.Category, error) {
+func (s *PostgresStorage) GetAllCategories(userId int64) ([]models.Category, error) {
 	categories := []models.Category{}
-	err := s.db.Select(&categories, "SELECT * FROM categories WHERE ownerid=$1", userID)
+	err := s.db.Select(&categories, "SELECT * FROM categories WHERE ownerid=$1", userId)
 	return categories, err
 }
 
-func (s *PostgresStorage) GetCategoryByID(categoryID int64) (*models.Category, error) {
+func (s *PostgresStorage) GetCategoryById(categoryId int64) (*models.Category, error) {
 	category := models.Category{}
-	res := s.db.QueryRowx("SELECT * FROM categories WHERE id=$1", categoryID)
+	res := s.db.QueryRowx("SELECT * FROM categories WHERE id=$1", categoryId)
 	err := res.StructScan(&category)
 	return &category, err
 }
@@ -134,14 +134,14 @@ func (s *PostgresStorage) UpdateCategory(category *models.Category) error {
 		 	name = COALESCE(NULLIF($1, ''), name)
 		 WHERE id=$2
 		 RETURNING name;`,
-		category.Name, category.ID)
+		category.Name, category.Id)
 
 	err := row.Scan(&category.Name)
 	return err
 }
 
-func (s *PostgresStorage) DeleteCategory(categoryID int64) error {
-	_, err := s.db.Exec("DELETE FROM categories WHERE id=$1", categoryID)
+func (s *PostgresStorage) DeleteCategory(categoryId int64) error {
+	_, err := s.db.Exec("DELETE FROM categories WHERE id=$1", categoryId)
 	return err
 }
 
@@ -150,28 +150,28 @@ func (s *PostgresStorage) CreateOperation(operation *models.Operation) (id int64
 	row := s.db.QueryRow(
 		`INSERT INTO operations (name, walletid, sum, date, place, categoryid) 
 		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		operation.Name, operation.WalletID, operation.Sum, operation.Date, operation.Place, operation.CategoryID)
+		operation.Name, operation.WalletId, operation.Sum, operation.Date, operation.Place, operation.CategoryId)
 	err = row.Scan(&id)
 	return
 }
 
-func (s *PostgresStorage) GetOperationsByWalletID(walletID int64) ([]models.Operation, error) {
+func (s *PostgresStorage) GetOperationsByWalletId(walletId int64) ([]models.Operation, error) {
 	operations := []models.Operation{}
-	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1", walletID)
+	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1", walletId)
 	return operations, err
 }
 
-func (s *PostgresStorage) GetOperationsSinceDateByWalletID(walletID int64, date time.Time) ([]models.Operation, error) {
+func (s *PostgresStorage) GetOperationsSinceDateByWalletId(walletId int64, date time.Time) ([]models.Operation, error) {
 	operations := []models.Operation{}
 	err := s.db.Select(&operations,
 		`SELECT * FROM operations WHERE walletid=$1 AND date >= $2`,
-		walletID, date)
+		walletId, date)
 	return operations, err
 }
 
-func (s *PostgresStorage) GetOperationByID(operationID int64) (*models.Operation, error) {
+func (s *PostgresStorage) GetOperationById(operationId int64) (*models.Operation, error) {
 	operation := models.Operation{}
-	res := s.db.QueryRowx("SELECT * FROM operations WHERE id=$1", operationID)
+	res := s.db.QueryRowx("SELECT * FROM operations WHERE id=$1", operationId)
 	err := res.StructScan(&operation)
 	return &operation, err
 }
@@ -187,13 +187,13 @@ func (s *PostgresStorage) UpdateOperation(operation *models.Operation) error {
 		 	categoryid = COALESCE(NULLIF($5, 0), categoryid)
 		 WHERE id=$6
 		 RETURNING name, sum, date, place, categoryid;`,
-		operation.Name, operation.Sum, operation.Date, operation.Place, operation.CategoryID, operation.ID)
+		operation.Name, operation.Sum, operation.Date, operation.Place, operation.CategoryId, operation.Id)
 
-	err := row.Scan(&operation.Name, &operation.Sum, &operation.Date, &operation.Place, &operation.CategoryID)
+	err := row.Scan(&operation.Name, &operation.Sum, &operation.Date, &operation.Place, &operation.CategoryId)
 	return err
 }
 
-func (s *PostgresStorage) DeleteOperation(operationID int64) error {
-	_, err := s.db.Exec("DELETE FROM operations WHERE id=$1", operationID)
+func (s *PostgresStorage) DeleteOperation(operationId int64) error {
+	_, err := s.db.Exec("DELETE FROM operations WHERE id=$1", operationId)
 	return err
 }

@@ -12,8 +12,8 @@ var (
 	ErrAccessDenied       error = errors.New("access denied")
 )
 
-func checkOwnership(ownerID, userID int64) error {
-	if ownerID != userID {
+func checkOwnership(ownerId, userId int64) error {
+	if ownerId != userId {
 		return ErrAccessDenied
 	}
 	return nil

@@ -9,30 +9,30 @@ import (
 )
 
 func (h *Handler) CreateOperation(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
+	userId := c.Locals("userId").(int64)
 
 	operation := models.Operation{}
 	if err := h.parseBody(c, &operation); err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	id, err := h.operationSerivce.CreateOperation(&operation, userID)
+	Id, err := h.operationSerivce.CreateOperation(&operation, userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotCreateOperation, err)
 	}
 
-	return h.send(c, fiber.StatusCreated, fiber.Map{"id": id})
+	return h.send(c, fiber.StatusCreated, fiber.Map{"Id": Id})
 }
 
 func (h *Handler) GetOperations(c *fiber.Ctx) error {
-	walletID, err := strconv.Atoi(c.Queries()["wallet_id"])
+	walletId, err := strconv.Atoi(c.Queries()["wallet_id"])
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
 	sinceParam := c.Queries()["since"]
 
-	userID := c.Locals("userId").(int64)
+	userId := c.Locals("userId").(int64)
 
 	var operations []models.Operation
 
@@ -42,9 +42,9 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 		if err != nil {
 			return h.sendError(c, ErrWrongFormat, err)
 		}
-		operations, err = h.operationSerivce.GetOperationsSinceDateByWalletID(int64(walletID), userID, sinceDate)
+		operations, err = h.operationSerivce.GetOperationsSinceDateByWalletId(int64(walletId), userId, sinceDate)
 	} else {
-		operations, err = h.operationSerivce.GetOperationsByWalletID(int64(walletID), userID)
+		operations, err = h.operationSerivce.GetOperationsByWalletId(int64(walletId), userId)
 	}
 
 	if err != nil {
@@ -53,14 +53,14 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 	return h.send(c, fiber.StatusOK, operations)
 }
 
-func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
-	operationID, err := h.parseID(c)
+func (h *Handler) GetOperationById(c *fiber.Ctx) error {
+	operationId, err := h.parseId(c)
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	userID := c.Locals("userId").(int64)
-	operation, err := h.operationSerivce.GetOperationByID(int64(operationID), userID)
+	userId := c.Locals("userId").(int64)
+	operation, err := h.operationSerivce.GetOperationById(int64(operationId), userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotGetOperation, err)
 	}
@@ -69,8 +69,8 @@ func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
 }
 
 func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
-	operationID, err := h.parseID(c)
+	userId := c.Locals("userId").(int64)
+	operationId, err := h.parseId(c)
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
@@ -80,8 +80,8 @@ func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	operation.ID = int64(operationID)
-	err = h.operationSerivce.UpdateOperation(&operation, userID)
+	operation.Id = int64(operationId)
+	err = h.operationSerivce.UpdateOperation(&operation, userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotUpdateOperation, err)
 	}
@@ -90,13 +90,13 @@ func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
 }
 
 func (h *Handler) DeleteOperation(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
-	operationID, err := h.parseID(c)
+	userId := c.Locals("userId").(int64)
+	operationId, err := h.parseId(c)
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	err = h.operationSerivce.DeleteOperation(int64(operationID), userID)
+	err = h.operationSerivce.DeleteOperation(int64(operationId), userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotDeleteOperation, err)
 	}

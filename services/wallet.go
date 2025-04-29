@@ -29,30 +29,30 @@ func (ws *WalletService) CreateWallet(wallet *models.Wallet) (int64, error) {
 	return id, err
 }
 
-func (ws *WalletService) GetAllWallets(userID int64) ([]models.Wallet, error) {
-	wallets, err := ws.storage.GetAllWallets(userID)
+func (ws *WalletService) GetAllWallets(userId int64) ([]models.Wallet, error) {
+	wallets, err := ws.storage.GetAllWallets(userId)
 	if err != nil {
 		return nil, ErrNoWalletsFound
 	}
 	return wallets, err
 }
 
-func (ws *WalletService) GetWalletByID(walletID int64, userID int64) (*models.Wallet, error) {
-	wallet, err := ws.storage.GetWalletByID(walletID)
+func (ws *WalletService) GetWalletById(walletId int64, userId int64) (*models.Wallet, error) {
+	wallet, err := ws.storage.GetWalletById(walletId)
 	if err != nil {
 		return nil, ErrWalletNotFound
 	}
 
 	// Check user's ownership of the wallet
-	if err := checkOwnership(wallet.OwnerID, userID); err != nil {
+	if err := checkOwnership(wallet.OwnerId, userId); err != nil {
 		return nil, err
 	}
 	return wallet, err
 }
 
-func (ws *WalletService) UpdateWallet(wallet *models.Wallet, userID int64) error {
+func (ws *WalletService) UpdateWallet(wallet *models.Wallet, userId int64) error {
 	// Check user's ownership of the wallet and if it exists
-	_, err := ws.GetWalletByID(wallet.ID, userID)
+	_, err := ws.GetWalletById(wallet.Id, userId)
 	if err != nil {
 		return err
 	}

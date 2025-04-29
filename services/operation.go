@@ -23,9 +23,9 @@ func NewOperationService(st storage.Storage) *OperationService {
 	return &ops
 }
 
-func (ops *OperationService) CreateOperation(operation *models.Operation, userID int64) (int64, error) {
+func (ops *OperationService) CreateOperation(operation *models.Operation, userId int64) (int64, error) {
 	// Check user's ownership of the wallet
-	err := ops.checkOwnershipByConnectedWallet(operation.WalletID, userID)
+	err := ops.checkOwnershipByConnectedWallet(operation.WalletId, userId)
 	if err != nil {
 		return 0, err
 	}
@@ -37,42 +37,42 @@ func (ops *OperationService) CreateOperation(operation *models.Operation, userID
 	return id, nil
 }
 
-func (ops *OperationService) GetOperationsByWalletID(walletID, userID int64) ([]models.Operation, error) {
+func (ops *OperationService) GetOperationsByWalletId(walletId, userId int64) ([]models.Operation, error) {
 	// Check user's ownership of the wallet
-	err := ops.checkOwnershipByConnectedWallet(walletID, userID)
+	err := ops.checkOwnershipByConnectedWallet(walletId, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	operations, err := ops.storage.GetOperationsByWalletID(walletID)
+	operations, err := ops.storage.GetOperationsByWalletId(walletId)
 	if err != nil {
 		return nil, ErrNoOperationsFound
 	}
 	return operations, nil
 }
 
-func (ops *OperationService) GetOperationsSinceDateByWalletID(walletID, userID int64, date time.Time) ([]models.Operation, error) {
+func (ops *OperationService) GetOperationsSinceDateByWalletId(walletId, userId int64, date time.Time) ([]models.Operation, error) {
 	// Check user's ownership of the wallet
-	err := ops.checkOwnershipByConnectedWallet(walletID, userID)
+	err := ops.checkOwnershipByConnectedWallet(walletId, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	operations, err := ops.storage.GetOperationsSinceDateByWalletID(walletID, date)
+	operations, err := ops.storage.GetOperationsSinceDateByWalletId(walletId, date)
 	if err != nil {
 		return nil, ErrNoOperationsFound
 	}
 	return operations, nil
 }
 
-func (ops *OperationService) GetOperationByID(operationID int64, userID int64) (*models.Operation, error) {
-	operation, err := ops.storage.GetOperationByID(operationID)
+func (ops *OperationService) GetOperationById(operationId int64, userId int64) (*models.Operation, error) {
+	operation, err := ops.storage.GetOperationById(operationId)
 	if err != nil {
 		return nil, ErrOperationNotFound
 	}
 
 	// Check user's ownership of the operation
-	err = ops.checkOwnershipByConnectedWallet(operation.WalletID, userID)
+	err = ops.checkOwnershipByConnectedWallet(operation.WalletId, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +80,9 @@ func (ops *OperationService) GetOperationByID(operationID int64, userID int64) (
 	return operation, nil
 }
 
-func (ops *OperationService) UpdateOperation(operation *models.Operation, userID int64) error {
+func (ops *OperationService) UpdateOperation(operation *models.Operation, userId int64) error {
 	// Check user's ownership of the operation and if it exists
-	_, err := ops.GetOperationByID(operation.ID, userID)
+	_, err := ops.GetOperationById(operation.Id, userId)
 	if err != nil {
 		return err
 	}
@@ -95,14 +95,14 @@ func (ops *OperationService) UpdateOperation(operation *models.Operation, userID
 	return nil
 }
 
-func (ops *OperationService) DeleteOperation(operationID int64, userID int64) error {
+func (ops *OperationService) DeleteOperation(operationId int64, userId int64) error {
 	// Check user's ownership of the operation and if it exists
-	_, err := ops.GetOperationByID(operationID, userID)
+	_, err := ops.GetOperationById(operationId, userId)
 	if err != nil {
 		return err
 	}
 
-	err = ops.storage.DeleteOperation(operationID)
+	err = ops.storage.DeleteOperation(operationId)
 	if err != nil {
 		return ErrUnableToDelete
 	}
@@ -110,13 +110,13 @@ func (ops *OperationService) DeleteOperation(operationID int64, userID int64) er
 	return nil
 }
 
-func (ops *OperationService) checkOwnershipByConnectedWallet(walletID, userID int64) error {
-	connectedWallet, err := ops.storage.GetWalletByID(walletID)
+func (ops *OperationService) checkOwnershipByConnectedWallet(walletId, userId int64) error {
+	connectedWallet, err := ops.storage.GetWalletById(walletId)
 	if err != nil {
 		return ErrConnectedWalletNotFound
 	}
 	// Check user's ownership of the operation
-	if err := checkOwnership(connectedWallet.OwnerID, userID); err != nil {
+	if err := checkOwnership(connectedWallet.OwnerId, userId); err != nil {
 		return err
 	}
 

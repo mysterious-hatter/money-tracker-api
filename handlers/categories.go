@@ -7,14 +7,14 @@ import (
 )
 
 func (h *Handler) CreateCategory(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
+	userId := c.Locals("userId").(int64)
 
 	category := models.Category{}
 	if err := h.parseBody(c, &category); err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	category.OwnerID = userID
+	category.OwnerId = userId
 	id, err := h.categoryService.CreateCategory(&category)
 	if err != nil {
 		return h.sendError(c, ErrCannotCreateCategory, err)
@@ -24,8 +24,8 @@ func (h *Handler) CreateCategory(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetCategories(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
-	categories, err := h.categoryService.GetAllCategories(userID)
+	userId := c.Locals("userId").(int64)
+	categories, err := h.categoryService.GetAllCategories(userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotGetCategories, err)
 	}
@@ -33,14 +33,14 @@ func (h *Handler) GetCategories(c *fiber.Ctx) error {
 	return h.send(c, fiber.StatusOK, categories)
 }
 
-func (h *Handler) GetCategoryByID(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
-	categoryID, err := h.parseID(c)
+func (h *Handler) GetCategoryById(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(int64)
+	categoryId, err := h.parseId(c)
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	category, err := h.categoryService.GetCategoryByID(int64(categoryID), userID)
+	category, err := h.categoryService.GetCategoryById(int64(categoryId), userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotGetCategory, err)
 	}
@@ -49,8 +49,8 @@ func (h *Handler) GetCategoryByID(c *fiber.Ctx) error {
 }
 
 func (h *Handler) UpdateCategory(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
-	categoryID, err := h.parseID(c)
+	userId := c.Locals("userId").(int64)
+	categoryId, err := h.parseId(c)
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
@@ -60,8 +60,8 @@ func (h *Handler) UpdateCategory(c *fiber.Ctx) error {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	category.ID = int64(categoryID)
-	err = h.categoryService.UpdateCategory(&category, userID)
+	category.Id = int64(categoryId)
+	err = h.categoryService.UpdateCategory(&category, userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotUpdateCategory, err)
 	}
@@ -70,13 +70,13 @@ func (h *Handler) UpdateCategory(c *fiber.Ctx) error {
 }
 
 func (h *Handler) DeleteCategory(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(int64)
-	categoryID, err := h.parseID(c)
+	userId := c.Locals("userId").(int64)
+	categoryId, err := h.parseId(c)
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	err = h.categoryService.DeleteCategory(int64(categoryID), userID)
+	err = h.categoryService.DeleteCategory(int64(categoryId), userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotDeleteCategory, err)
 	}

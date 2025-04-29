@@ -14,7 +14,7 @@ func NewUserService(st storage.Storage) *UserService {
 	return &us
 }
 
-func (us *UserService) GetUserByID(id int64) (*models.User, error) {
-	user, err := us.storage.GetUserByID(id)
+func (us *UserService) GetUserById(id int64) (*models.User, error) {
+	user, err := us.storage.GetUserById(id)
 	return user, err
 }
