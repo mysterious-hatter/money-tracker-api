@@ -7,7 +7,7 @@ import (
 
 type Storage interface {
 	Open(host, username, passsword, dbname string) error
-	Close()
+	Close() error
 	// User
 	CreateUser(user *models.User) (int64, error)
 	GetUserByID(id int64) (*models.User, error)

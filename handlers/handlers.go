@@ -59,9 +59,13 @@ func NewHandler(
 	ops services.OperationService,
 ) *Handler {
 	validate := validator.New()
-	validate.RegisterValidation("nonzero", func(fl validator.FieldLevel) bool {
+	err := validate.RegisterValidation("nonzero", func(fl validator.FieldLevel) bool {
 		return fl.Field().Float() != 0
 	})
+	if err != nil {
+		panic("failed to register custom validation: " + err.Error())
+	}
+	
 	return &Handler{
 		authService:      as,
 		userService:      us,

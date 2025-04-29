@@ -22,8 +22,8 @@ func (s *PostgresStorage) Open(host, username, passsword, dbname string) (err er
 	return
 }
 
-func (s *PostgresStorage) Close() {
-	s.db.Close()
+func (s *PostgresStorage) Close() error {
+	return s.db.Close()
 }
 
 // Users
