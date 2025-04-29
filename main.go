@@ -3,6 +3,7 @@ package main
 import (
 	"finances-backend/services"
 	"finances-backend/storage"
+	"finances-backend/handlers"
 	"log"
 	"os"
 	"strconv"
@@ -48,7 +49,7 @@ func main() {
 	categoryService  := services.NewCategoryService(storage)
 	operationService := services.NewOperationService(storage)
 
-	handler := NewHandler(*authService, *userService, *walletService, *categoryService, *operationService)
+	handler := handlers.NewHandler(*authService, *userService, *walletService, *categoryService, *operationService)
 
 	// Initialize Fiber
 	app := fiber.New()
