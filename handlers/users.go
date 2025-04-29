@@ -6,10 +6,11 @@ import (
 
 func (h *Handler) Profile(c *fiber.Ctx) error {
 	userID := c.Locals("userId").(int64)
+
 	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
-		c.JSON(ErrorResponse{Error: ErrCannotGetProfile.Error(), Description: err.Error()})
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return h.sendError(c, ErrCannotGetProfile, err)
 	}
-	return c.JSON(user)
+	
+	return h.send(c, fiber.StatusOK, user)
 }
