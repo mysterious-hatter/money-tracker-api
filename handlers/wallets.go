@@ -16,7 +16,7 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 
 	// Check if both fields are provIded
 	if len(wallet.Name) == 0 || len(wallet.Currency) == 0 {
-		return h.sendError(c, ErrWrongFormat, ErrNotAllRequiredFieldsProvIded)
+		return h.sendError(c, ErrWrongFormat, ErrNotAllRequiredFieldsProvided)
 	}
 
 	wallet.OwnerId = userId
