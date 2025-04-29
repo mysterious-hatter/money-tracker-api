@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) CreateOperation(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 
 	operation := models.Operation{}
 	if err := h.parseBody(c, &operation); err != nil {
@@ -35,7 +35,7 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 
 	sinceParam := c.Queries()["since"]
 
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 
 	operations := []models.Operation{}
 	if len(sinceParam) > 9 { // DD-MM-YYYY
@@ -63,7 +63,7 @@ func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	operation, err := h.operationSerivce.GetOperationByID(int64(operationID), userID)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrCannotGetOperation.Error(), Description: err.Error()})
@@ -74,7 +74,7 @@ func (h *Handler) GetOperationByID(c *fiber.Ctx) error {
 }
 
 func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	operationID, err := h.parseID(c)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
@@ -99,7 +99,7 @@ func (h *Handler) UpdateOperation(c *fiber.Ctx) error {
 }
 
 func (h *Handler) DeleteOperation(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	operationID, err := h.parseID(c)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})

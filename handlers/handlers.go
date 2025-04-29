@@ -10,23 +10,25 @@ import (
 )
 
 var (
-	ErrWrongFormat      error = errors.New("wrong format")
-	ErrAuthFailed       error = errors.New("authentication failed")
+	// Common
+	ErrInternalServerError   error = errors.New("internal server error")
+	ErrWrongFormat           error = errors.New("wrong format")
+	ErrAuthFailed            error = errors.New("authentication failed")
 	// Users
-	ErrCannotCreateUser error = errors.New("cannot create user")
-	ErrCannotGetProfile error = errors.New("cannot get profile")
+	ErrCannotCreateUser      error = errors.New("cannot create user")
+	ErrCannotGetProfile      error = errors.New("cannot get profile")
 	// Wallets
-	ErrCannotCreateWallet error = errors.New("cannot create wallet")
-	ErrCannotGetWallet    error = errors.New("cannot get wallet")
-	ErrCannotGetWallets   error = errors.New("cannot get wallets")
-	ErrCannotUpdateWallet error = errors.New("cannot update wallet")
-	ErrCannotDeleteWallet error = errors.New("cannot delete wallet")
+	ErrCannotCreateWallet    error = errors.New("cannot create wallet")
+	ErrCannotGetWallet       error = errors.New("cannot get wallet")
+	ErrCannotGetWallets      error = errors.New("cannot get wallets")
+	ErrCannotUpdateWallet    error = errors.New("cannot update wallet")
+	ErrCannotDeleteWallet    error = errors.New("cannot delete wallet")
 	// Categories
-	ErrCannotCreateCategory error = errors.New("cannot create category")
-	ErrCannotGetCategory    error = errors.New("cannot get category")
-	ErrCannotGetCategories  error = errors.New("cannot get categories")
-	ErrCannotUpdateCategory error = errors.New("cannot update category")
-	ErrCannotDeleteCategory error = errors.New("cannot delete category")
+	ErrCannotCreateCategory  error = errors.New("cannot create category")
+	ErrCannotGetCategory     error = errors.New("cannot get category")
+	ErrCannotGetCategories   error = errors.New("cannot get categories")
+	ErrCannotUpdateCategory  error = errors.New("cannot update category")
+	ErrCannotDeleteCategory  error = errors.New("cannot delete category")
 	// Operations
 	ErrCannotCreateOperation error = errors.New("cannot create operation")
 	ErrCannotGetOperation    error = errors.New("cannot get operation")
@@ -93,33 +95,34 @@ func (h *Handler) parseBody(c *fiber.Ctx, out interface{}) error {
 }
 
 func (h *Handler) send(c *fiber.Ctx, statusCode int, data interface{}) error {
-	if data == nil {
-		return c.SendStatus(statusCode)
-	}
 	return c.Status(statusCode).JSON(data)
 }
 
-func (h *Handler) sendError(c *fiber.Ctx, err error, description string) error {
-	c.JSON(ErrorResponse{Error: err.Error(), Description: description})
+func (h *Handler) sendError(c *fiber.Ctx, err error, fullErr error) error {
 	var statusCode int
-	
-	switch err {
-	case ErrWrongFormat:
+
+	switch {
+	case err == ErrWrongFormat:
 		statusCode = fiber.StatusBadRequest
-	case ErrAuthFailed:
+	case err == ErrAuthFailed:
 		statusCode = fiber.StatusUnauthorized
-	case ErrCannotGetProfile:
+	case err == ErrCannotGetProfile:
 		statusCode = fiber.StatusInternalServerError
-	case services.ErrAccessDenied:
+	case fullErr == services.ErrAccessDenied:
 		statusCode = fiber.StatusForbidden
-	case services.ErrCategoryNotFound, services.ErrWalletNotFound, services.ErrOperationNotFound:
+	case fullErr == services.ErrCategoryNotFound, fullErr == services.ErrWalletNotFound, fullErr == services.ErrOperationNotFound:
 		statusCode = fiber.StatusNotFound
 	// Maybe these errors will be removed in the future
-	case services.ErrNoCategoriesFound, services.ErrNoWalletsFound, services.ErrNoOperationsFound:
+	case fullErr == services.ErrNoCategoriesFound, fullErr == services.ErrNoWalletsFound, fullErr == services.ErrNoOperationsFound:
 		statusCode = fiber.StatusNotFound
 	default:
 		statusCode = fiber.StatusInternalServerError
 	}
 
-	return c.Status(statusCode).JSON(ErrorResponse{Error: err.Error(), Description: description})
+	if err == nil || fullErr == nil {
+		err = ErrInternalServerError
+		fullErr = errors.New("an unexpected error occurred, please try again later")
+	}
+
+	return c.Status(statusCode).JSON(ErrorResponse{Error: err.Error(), Description: fullErr.Error()})
 }

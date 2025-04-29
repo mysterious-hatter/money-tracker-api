@@ -5,7 +5,7 @@ import (
 )
 
 func (h *Handler) Profile(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrCannotGetProfile.Error(), Description: err.Error()})

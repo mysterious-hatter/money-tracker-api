@@ -7,7 +7,7 @@ import (
 )
 
 func (h *Handler) CreateWallet(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 
 	wallet := models.Wallet{}
 	if err := h.parseBody(c, &wallet); err != nil {
@@ -32,7 +32,7 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetWallets(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	wallets, err := h.walletService.GetAllWallets(userID)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrCannotGetWallets.Error(), Description: err.Error()})
@@ -42,7 +42,7 @@ func (h *Handler) GetWallets(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetWalletByID(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	walletID, err := h.parseID(c)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
@@ -59,7 +59,7 @@ func (h *Handler) GetWalletByID(c *fiber.Ctx) error {
 }
 
 func (h *Handler) UpdateWallet(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(int64)
+	userID := c.Locals("userId").(int64)
 	walletID, err := h.parseID(c)
 	if err != nil {
 		c.JSON(ErrorResponse{Error: ErrWrongFormat.Error(), Description: err.Error()})
