@@ -77,20 +77,20 @@ func main() {
 	// Wallets
 	autorizedGroup.Post("/wallet", handler.CreateWallet)
 	autorizedGroup.Get("/wallet", handler.GetWallets)
-	autorizedGroup.Get("/wallet/:id", handler.GetWalletByID)
+	autorizedGroup.Get("/wallet/:id", handler.GetWalletById)
 	autorizedGroup.Patch("/wallet/:id", handler.UpdateWallet)
 
 	// Categories
 	autorizedGroup.Post("/category", handler.CreateCategory)
 	autorizedGroup.Get("/category", handler.GetCategories)
-	autorizedGroup.Get("/category/:id", handler.GetCategoryByID)
+	autorizedGroup.Get("/category/:id", handler.GetCategoryById)
 	autorizedGroup.Patch("/category/:id", handler.UpdateCategory)
 	autorizedGroup.Delete("/category/:id", handler.DeleteCategory)
 
 	// Operations
 	autorizedGroup.Post("/operation", handler.CreateOperation)
 	autorizedGroup.Get("/operation", handler.GetOperations)
-	autorizedGroup.Get("/operation/:id", handler.GetOperationByID)
+	autorizedGroup.Get("/operation/:id", handler.GetOperationById)
 	autorizedGroup.Patch("/operation/:id", handler.UpdateOperation)
 	autorizedGroup.Delete("/operation/:id", handler.DeleteOperation)
 
