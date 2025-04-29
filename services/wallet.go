@@ -61,7 +61,7 @@ func (ws *WalletService) UpdateWallet(wallet *models.Wallet, userID int64) error
 	if err != nil {
 		return ErrUnableToUpdate
 	}
-	return err 
+	return err
 }
 
 // Deletion of wallets is not forseen,

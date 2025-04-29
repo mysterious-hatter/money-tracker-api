@@ -11,6 +11,6 @@ func (h *Handler) Profile(c *fiber.Ctx) error {
 	if err != nil {
 		return h.sendError(c, ErrCannotGetProfile, err)
 	}
-	
+
 	return h.send(c, fiber.StatusOK, user)
 }

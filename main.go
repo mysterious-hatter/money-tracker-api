@@ -1,9 +1,9 @@
 package main
 
 import (
+	"finances-backend/handlers"
 	"finances-backend/services"
 	"finances-backend/storage"
-	"finances-backend/handlers"
 	"log"
 	"os"
 	"strconv"
@@ -17,12 +17,12 @@ import (
 func main() {
 	// Load environmental variables
 	err := godotenv.Load("./.env")
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Error loading .env file: %s", err)
 	}
 
 	// Open database
- 	storage := storage.NewPostgresStorage()
+	storage := storage.NewPostgresStorage()
 	err = storage.Open(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_USERNAME"),
@@ -43,10 +43,10 @@ func main() {
 	secret := os.Getenv("JWT_SECRET")
 
 	// Initialize services and a handler
-	authService      := services.NewAuthService(storage, secret, expiration)
-	userService      := services.NewUserService(storage)
-	walletService    := services.NewWalletService(storage)
-	categoryService  := services.NewCategoryService(storage)
+	authService := services.NewAuthService(storage, secret, expiration)
+	userService := services.NewUserService(storage)
+	walletService := services.NewWalletService(storage)
+	categoryService := services.NewCategoryService(storage)
 	operationService := services.NewOperationService(storage)
 
 	handler := handlers.NewHandler(*authService, *userService, *walletService, *categoryService, *operationService)
@@ -54,32 +54,32 @@ func main() {
 	// Initialize Fiber
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
-        AllowOrigins: "*",
-        AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-    }))
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
 
 	// Routes:
-    // Public access
-    publicGroup := app.Group("")
+	// Public access
+	publicGroup := app.Group("")
 	publicGroup.Post("/register", handler.Register)
-    publicGroup.Post("/login", handler.Login)
+	publicGroup.Post("/login", handler.Login)
 
-    // Authorized access
-    autorizedGroup := app.Group("")
-    autorizedGroup.Use(jwtware.New(jwtware.Config{
-        SigningKey: jwtware.SigningKey{
-            Key: []byte(os.Getenv("JWT_SECRET")),
-        },
-    }))
+	// Authorized access
+	autorizedGroup := app.Group("")
+	autorizedGroup.Use(jwtware.New(jwtware.Config{
+		SigningKey: jwtware.SigningKey{
+			Key: []byte(os.Getenv("JWT_SECRET")),
+		},
+	}))
 	autorizedGroup.Use(handler.AuthorizeMiddleware)
-    autorizedGroup.Get("/profile", handler.Profile)
+	autorizedGroup.Get("/profile", handler.Profile)
 
 	// Wallets
 	autorizedGroup.Post("/wallet", handler.CreateWallet)
 	autorizedGroup.Get("/wallet", handler.GetWallets)
 	autorizedGroup.Get("/wallet/:id", handler.GetWalletByID)
 	autorizedGroup.Patch("/wallet/:id", handler.UpdateWallet)
-	
+
 	// Categories
 	autorizedGroup.Post("/category", handler.CreateCategory)
 	autorizedGroup.Get("/category", handler.GetCategories)

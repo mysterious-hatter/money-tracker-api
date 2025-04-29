@@ -11,8 +11,8 @@ import (
 )
 
 type AuthService struct {
-	storage storage.Storage
-	jwtSercet string
+	storage       storage.Storage
+	jwtSercet     string
 	jwtExpiration int
 }
 
@@ -64,23 +64,23 @@ func (as *AuthService) AuthorizeUser(token interface{}) (int64, error) {
 		return -1, errors.New("invalid token")
 	}
 
-	// Get payload	
+	// Get payload
 	payload, ok := jwtToken.Claims.(jwt.MapClaims)
 	if !ok {
 		return -1, errors.New("invalid token")
 	}
-	
+
 	return int64(payload["id"].(float64)), nil
 }
 
 func HashPassword(password string) (string, error) {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        return "", err
-    }
-    return string(hashedPassword), nil
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }
 
 func CheckPassword(password string, hashedPassword string) error {
-    return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }

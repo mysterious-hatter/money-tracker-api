@@ -169,7 +169,6 @@ func (s *PostgresStorage) GetOperationsSinceDateByWalletID(walletID int64, date 
 	return operations, err
 }
 
-
 func (s *PostgresStorage) GetOperationByID(operationID int64) (*models.Operation, error) {
 	operation := models.Operation{}
 	res := s.db.QueryRowx("SELECT * FROM operations WHERE id=$1", operationID)

@@ -29,7 +29,7 @@ type Storage interface {
 	GetCategoryByID(categoryID int64) (*models.Category, error)
 	UpdateCategory(category *models.Category) error
 	DeleteCategory(categoryID int64) error
-	
+
 	// Operation
 	CreateOperation(operation *models.Operation) (int64, error)
 	GetOperationsByWalletID(walletID int64) ([]models.Operation, error)
