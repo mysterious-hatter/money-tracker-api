@@ -106,22 +106,31 @@ func (h *Handler) send(c *fiber.Ctx, statusCode int, data interface{}) error {
 func (h *Handler) sendError(c *fiber.Ctx, err error, fullErr error) error {
 	var statusCode int
 
-	switch {
-	case err == ErrWrongFormat:
-		statusCode = fiber.StatusBadRequest
-	case err == ErrAuthFailed:
-		statusCode = fiber.StatusUnauthorized
-	case err == ErrCannotGetProfile:
-		statusCode = fiber.StatusInternalServerError
-	case fullErr == services.ErrAccessDenied:
-		statusCode = fiber.StatusForbidden
-	case fullErr == services.ErrCategoryNotFound, fullErr == services.ErrWalletNotFound, fullErr == services.ErrOperationNotFound:
-		statusCode = fiber.StatusNotFound
-	// Maybe these errors will be removed in the future
-	case fullErr == services.ErrNoCategoriesFound, fullErr == services.ErrNoWalletsFound, fullErr == services.ErrNoOperationsFound:
-		statusCode = fiber.StatusNotFound
+	// Check if there is useful information in the handlers error
+	switch err {
+	case ErrWrongFormat, ErrNotAllRequiredFieldsProvided:
+		// Syntax errors in the request
+		statusCode = fiber.StatusBadRequest // 400
+	case ErrCannotCreateUser, ErrCannotCreateWallet, ErrCannotCreateCategory, ErrCannotCreateOperation:
+		// Normally means, that the user is trying to create an already existing entity
+		statusCode = fiber.StatusConflict // 409
+	case ErrAuthFailed:
+		// Authentication errors
+		statusCode = fiber.StatusUnauthorized // 401
 	default:
-		statusCode = fiber.StatusInternalServerError
+		// All other errors
+		statusCode = fiber.StatusInternalServerError // 500
+	}
+
+	// Check if there is useful information in the services error
+	switch fullErr {
+	case services.ErrAccessDenied:
+		statusCode = fiber.StatusForbidden // 403
+	case services.ErrUserNotFound, services.ErrCategoryNotFound, services.ErrWalletNotFound, services.ErrOperationNotFound:
+		statusCode = fiber.StatusNotFound // 404
+	case services.ErrNoCategoriesFound, services.ErrNoWalletsFound, services.ErrNoOperationsFound:
+		// Maybe these errors will be removed in the future
+		statusCode = fiber.StatusNotFound
 	}
 
 	if err == nil || fullErr == nil {
