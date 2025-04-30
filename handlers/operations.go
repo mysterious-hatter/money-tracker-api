@@ -25,7 +25,7 @@ func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetOperations(c *fiber.Ctx) error {
-	walletId, err := strconv.Atoi(c.Queries()["wallet_id"])
+	walletId, err := strconv.Atoi(c.Queries()["walletId"])
 	if err != nil {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
