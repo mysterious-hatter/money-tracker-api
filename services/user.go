@@ -4,6 +4,7 @@ import (
 	"errors"
 	"finances-backend/models"
 	"finances-backend/storage"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -20,7 +21,7 @@ func NewUserService(st storage.Storage) *UserService {
 }
 
 func (us *UserService) CreateUser(user *models.User) (id int64, err error) {
-	user.Password, err = HashPassword(user.Password)
+	user.Password, err = hashPassword(user.Password)
 	if err != nil {
 		return 0, err
 	}
@@ -35,4 +36,12 @@ func (us *UserService) GetUserById(id int64) (*models.User, error) {
 		return nil, ErrUserNotFound
 	}
 	return user, nil
+}
+
+func hashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }

@@ -28,8 +28,8 @@ func (s *PostgresStorage) Close() error {
 
 // Users
 func (s *PostgresStorage) CreateUser(user *models.User) (id int64, err error) {
-	row := s.db.QueryRow("INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id",
-		user.Name, user.Email, user.Password)
+	row := s.db.QueryRow("INSERT INTO users (name, nickname, password) VALUES ($1, $2, $3) RETURNING id",
+		user.Name, user.Nickname, user.Password)
 	err = row.Scan(&id)
 	return
 }
@@ -41,9 +41,9 @@ func (s *PostgresStorage) GetUserById(id int64) (*models.User, error) {
 	return &user, err
 }
 
-func (s *PostgresStorage) GetUserByEmail(email string) (*models.User, error) {
+func (s *PostgresStorage) GetUserByNickname(nickname string) (*models.User, error) {
 	user := models.User{}
-	res := s.db.QueryRowx("SELECT * FROM users WHERE email=$1", email)
+	res := s.db.QueryRowx("SELECT * FROM users WHERE nickname=$1", nickname)
 	err := res.StructScan(&user)
 	return &user, err
 }

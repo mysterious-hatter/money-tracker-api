@@ -22,8 +22,8 @@ func NewAuthService(st storage.Storage, jwtSec string, jwtExp int) *AuthService 
 }
 
 func (as *AuthService) AuthenticateUser(loginData *models.User) (string, error) {
-	// Get user by email
-	user, err := as.storage.GetUserByEmail(loginData.Email)
+	// Get user by Nickname
+	user, err := as.storage.GetUserByNickname(loginData.Nickname)
 	if err != nil {
 		return "", err // user not found
 	}
@@ -61,14 +61,6 @@ func (as *AuthService) AuthorizeUser(token interface{}) (int64, error) {
 	}
 
 	return int64(payload["id"].(float64)), nil
-}
-
-func HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hashedPassword), nil
 }
 
 func CheckPassword(password string, hashedPassword string) error {

@@ -11,7 +11,7 @@ type Storage interface {
 	// User
 	CreateUser(user *models.User) (int64, error)
 	GetUserById(id int64) (*models.User, error)
-	GetUserByEmail(email string) (*models.User, error)
+	GetUserByNickname(nickname string) (*models.User, error)
 	GetAllUsers() (*[]models.User, error)
 	// UpdateUser(user *models.User) error
 	// No delete user method because it is not needed
