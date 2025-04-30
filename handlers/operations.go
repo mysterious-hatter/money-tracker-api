@@ -16,12 +16,17 @@ func (h *Handler) CreateOperation(c *fiber.Ctx) error {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	Id, err := h.operationSerivce.CreateOperation(&operation, userId)
+	// Check if both fields are provIded
+	if len(operation.Name) == 0 || len(operation.Place) == 0 {
+		return h.sendError(c, ErrWrongFormat, ErrNotAllRequiredFieldsProvided)
+	}
+
+	id, err := h.operationSerivce.CreateOperation(&operation, userId)
 	if err != nil {
 		return h.sendError(c, ErrCannotCreateOperation, err)
 	}
 
-	return h.send(c, fiber.StatusCreated, fiber.Map{"id": Id})
+	return h.send(c, fiber.StatusCreated, fiber.Map{"id": id})
 }
 
 func (h *Handler) GetOperations(c *fiber.Ctx) error {
