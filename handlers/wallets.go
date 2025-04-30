@@ -25,7 +25,7 @@ func (h *Handler) CreateWallet(c *fiber.Ctx) error {
 		return h.sendError(c, ErrCannotCreateWallet, err)
 	}
 
-	return h.send(c, fiber.StatusCreated, fiber.Map{"Id": Id})
+	return h.send(c, fiber.StatusCreated, fiber.Map{"id": Id})
 }
 
 func (h *Handler) GetWallets(c *fiber.Ctx) error {
