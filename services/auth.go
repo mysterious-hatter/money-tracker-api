@@ -21,16 +21,6 @@ func NewAuthService(st storage.Storage, jwtSec string, jwtExp int) *AuthService 
 	return &as
 }
 
-func (as *AuthService) CreateUser(user *models.User) (id int64, err error) {
-	user.Password, err = HashPassword(user.Password)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err = as.storage.CreateUser(user)
-	return id, err
-}
-
 func (as *AuthService) AuthenticateUser(loginData *models.User) (string, error) {
 	// Get user by email
 	user, err := as.storage.GetUserByEmail(loginData.Email)

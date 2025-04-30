@@ -12,7 +12,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		return h.sendError(c, ErrWrongFormat, err)
 	}
 
-	id, err := h.authService.CreateUser(&user)
+	id, err := h.userService.CreateUser(&user)
 	if err != nil {
 		return h.sendError(c, ErrCannotCreateUser, err)
 	}
