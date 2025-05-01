@@ -32,7 +32,7 @@ func (ops *OperationService) CreateOperation(operation *models.Operation, userId
 
 	id, err := ops.storage.CreateOperation(operation)
 	if err != nil {
-		return 0, ErrUnableToCreate
+		return 0, err
 	}
 	return id, nil
 }
@@ -89,7 +89,7 @@ func (ops *OperationService) UpdateOperation(operation *models.Operation, userId
 
 	err = ops.storage.UpdateOperation(operation)
 	if err != nil {
-		return ErrUnableToUpdate
+		return err
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (ops *OperationService) DeleteOperation(operationId int64, userId int64) er
 
 	err = ops.storage.DeleteOperation(operationId)
 	if err != nil {
-		return ErrUnableToDelete
+		return err
 	}
 
 	return nil
