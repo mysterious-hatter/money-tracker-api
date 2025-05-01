@@ -24,7 +24,7 @@ func NewCategoryService(st storage.Storage) *CategoryService {
 func (cs *CategoryService) CreateCategory(category *models.Category) (int64, error) {
 	id, err := cs.storage.CreateCategory(category)
 	if err != nil {
-		return 0, ErrUnableToCreate
+		return 0, err
 	}
 	return id, nil
 }
@@ -60,7 +60,7 @@ func (cs *CategoryService) UpdateCategory(category *models.Category, userId int6
 
 	err = cs.storage.UpdateCategory(category)
 	if err != nil {
-		return ErrUnableToUpdate
+		return err
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (cs *CategoryService) DeleteCategory(categoryId int64, userId int64) error 
 
 	err = cs.storage.DeleteCategory(categoryId)
 	if err != nil {
-		return ErrUnableToDelete
+		return err
 	}
 
 	return nil

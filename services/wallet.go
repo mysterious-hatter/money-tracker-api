@@ -24,7 +24,7 @@ func NewWalletService(st storage.Storage) *WalletService {
 func (ws *WalletService) CreateWallet(wallet *models.Wallet) (int64, error) {
 	id, err := ws.storage.CreateWallet(wallet)
 	if err != nil {
-		return 0, ErrUnableToCreate
+		return 0, err
 	}
 	return id, err
 }
@@ -59,7 +59,7 @@ func (ws *WalletService) UpdateWallet(wallet *models.Wallet, userId int64) error
 
 	err = ws.storage.UpdateWallet(wallet)
 	if err != nil {
-		return ErrUnableToUpdate
+		return err
 	}
 	return err
 }
