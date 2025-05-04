@@ -1,4 +1,4 @@
-# Some helpful information
+# Some helpful information for CI/CD
 ## Open Postgesql in the Docker container
 Go inside of the container
 ```console
