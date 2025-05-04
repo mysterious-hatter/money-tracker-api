@@ -7,4 +7,4 @@ This API is written on Go and uses PostgreSQL to store the data. In purpose of s
 ## Comming soon
 - A search for the operations
 - Account's data editing
-- 
+- Sorting filters
