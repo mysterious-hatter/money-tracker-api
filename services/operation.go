@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"time"
 
 	"finances-backend/models"
 	"finances-backend/storage"
@@ -37,32 +36,16 @@ func (ops *OperationService) CreateOperation(operation *models.Operation, userId
 	return id, nil
 }
 
-func (ops *OperationService) GetOperationsByWalletId(walletId, userId int64) ([]models.Operation, error) {
+// walletId and userId are obligatory, sinceDate and sortBy are optional
+func (ops *OperationService) GetOperations(userId, walletId int64, sinceDate models.DateOnly, sortBy string) ([]models.Operation, error) {
 	// Check user's ownership of the wallet
 	err := ops.checkOwnershipByConnectedWallet(walletId, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	operations, err := ops.storage.GetOperationsByWalletId(walletId)
-	if err != nil {
-		return nil, ErrNoOperationsFound
-	}
-	return operations, nil
-}
-
-func (ops *OperationService) GetOperationsSinceDateByWalletId(walletId, userId int64, date time.Time) ([]models.Operation, error) {
-	// Check user's ownership of the wallet
-	err := ops.checkOwnershipByConnectedWallet(walletId, userId)
-	if err != nil {
-		return nil, err
-	}
-
-	operations, err := ops.storage.GetOperationsSinceDateByWalletId(walletId, date)
-	if err != nil {
-		return nil, ErrNoOperationsFound
-	}
-	return operations, nil
+	operations, err := ops.storage.GetOperations(walletId, sinceDate, sortBy)
+	return operations, err
 }
 
 func (ops *OperationService) GetOperationById(operationId int64, userId int64) (*models.Operation, error) {

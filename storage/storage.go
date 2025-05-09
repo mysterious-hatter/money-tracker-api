@@ -2,12 +2,11 @@ package storage
 
 import (
 	"finances-backend/models"
-	"time"
 )
 
 type Storage interface {
 	Open(host, username, passsword, dbname string) error
-	Close() error
+	// Close() error
 	// User
 	CreateUser(user *models.User) (int64, error)
 	GetUserById(id int64) (*models.User, error)
@@ -32,8 +31,7 @@ type Storage interface {
 
 	// Operation
 	CreateOperation(operation *models.Operation) (int64, error)
-	GetOperationsByWalletId(walletId int64) ([]models.Operation, error)
-	GetOperationsSinceDateByWalletId(walletId int64, date time.Time) ([]models.Operation, error)
+	GetOperations(walletId int64, sinceDate models.DateOnly, sortBy string) ([]models.Operation, error)
 	GetOperationById(operationId int64) (*models.Operation, error)
 	UpdateOperation(operation *models.Operation) error
 	DeleteOperation(operationId int64) error

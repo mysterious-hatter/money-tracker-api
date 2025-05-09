@@ -29,7 +29,7 @@ func main() {
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
-	defer storage.Close()
+	// defer storage.Close()
 
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)

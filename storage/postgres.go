@@ -2,14 +2,12 @@ package storage
 
 import (
 	"finances-backend/models"
-	"time"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type PostgresStorage struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 func NewPostgresStorage() Storage {
@@ -17,183 +15,150 @@ func NewPostgresStorage() Storage {
 }
 
 func (s *PostgresStorage) Open(host, username, passsword, dbname string) (err error) {
-	connStr := "user=" + username + " password=" + passsword + " dbname=" + dbname + " host=" + host + " sslmode=disable"
-	s.db, err = sqlx.Connect("postgres", connStr)
+	dsn := "user=" + username + " password=" + passsword + " dbname=" + dbname + " host=" + host + " sslmode=disable"
+	s.db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	return
-}
-
-func (s *PostgresStorage) Close() error {
-	return s.db.Close()
 }
 
 // Users
-func (s *PostgresStorage) CreateUser(user *models.User) (id int64, err error) {
-	row := s.db.QueryRow("INSERT INTO users (name, nickname, password) VALUES ($1, $2, $3) RETURNING id",
-		user.Name, user.Nickname, user.Password)
-	err = row.Scan(&id)
-	return
+func (s *PostgresStorage) CreateUser(user *models.User) (int64, error) {
+	result := s.db.Table("users").Create(&user)
+
+	return user.Id, result.Error
 }
 
 func (s *PostgresStorage) GetUserById(id int64) (*models.User, error) {
 	user := models.User{}
-	res := s.db.QueryRowx("SELECT * FROM users WHERE id=$1", id)
-	err := res.StructScan(&user)
-	return &user, err
+	result := s.db.Table("users").First(&user, id)
+	return &user, result.Error
 }
 
 func (s *PostgresStorage) GetUserByNickname(nickname string) (*models.User, error) {
 	user := models.User{}
-	res := s.db.QueryRowx("SELECT * FROM users WHERE nickname=$1", nickname)
-	err := res.StructScan(&user)
-	return &user, err
+	result := s.db.Table("users").Where("nickname = ?", nickname).First(&user)
+	return &user, result.Error
 }
 
 func (s *PostgresStorage) GetAllUsers() (*[]models.User, error) {
 	users := []models.User{}
-	err := s.db.Select(&users, "SELECT * FROM users")
-	return &users, err
+	result := s.db.Table("users").Find(&users)
+	return &users, result.Error
 }
 
 // Wallets
 func (s *PostgresStorage) CreateWallet(wallet *models.Wallet) (id int64, err error) {
-	row := s.db.QueryRow("INSERT INTO wallets (name, currency, ownerid) VALUES ($1, $2, $3) RETURNING id",
-		wallet.Name, wallet.Currency, wallet.OwnerId)
-	err = row.Scan(&id)
-	return
+	result := s.db.Table("wallets").Create(&wallet)
+	return wallet.Id, result.Error
 }
 
 func (s *PostgresStorage) GetAllWallets(userId int64) ([]models.Wallet, error) {
 	wallets := []models.Wallet{}
-	err := s.db.Select(&wallets,
-		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
-		 FROM wallets LEFT JOIN operations
-		 ON wallets.id=operations.walletid
-		 WHERE wallets.ownerid=$1
-		 GROUP BY wallets.id;`,
-		userId)
-	return wallets, err
+	result := s.db.Table("wallets").Select("wallets.*, COALESCE(SUM(operations.sum), 0) AS balance").
+		Joins("LEFT JOIN operations ON wallets.id = operations.walletid").
+		Where("wallets.ownerid = ?", userId).
+		Group("wallets.id").
+		Find(&wallets)
+	return wallets, result.Error
 }
 
 func (s *PostgresStorage) GetWalletById(walletId int64) (*models.Wallet, error) {
 	wallet := models.Wallet{}
-	res := s.db.QueryRowx(
-		`SELECT wallets.*, COALESCE(SUM(operations.sum), 0) AS balance
-		 FROM wallets
-		 LEFT JOIN operations ON wallets.id = operations.walletid
-         WHERE wallets.id = $1
-         GROUP BY wallets.id;`,
-		walletId)
-
-	err := res.StructScan(&wallet)
-	if err != nil {
-		return nil, err
-	}
-
-	return &wallet, err
+	result := s.db.Table("wallets").Select("wallets.*, COALESCE(SUM(operations.sum), 0) AS balance").
+		Joins("LEFT JOIN operations ON wallets.id = operations.walletid").
+		Where("wallets.id = ?", walletId).
+		Group("wallets.id").
+		First(&wallet)
+	return &wallet, result.Error
 }
 
 func (s *PostgresStorage) UpdateWallet(wallet *models.Wallet) error {
-	row := s.db.QueryRow(
-		`UPDATE wallets
-		 SET
-		 	name = COALESCE(NULLIF($1, ''), name), 
-		 	currency = COALESCE(NULLIF($2, ''), currency)
-		 WHERE id = $3
-		 RETURNING name, currency;`,
-		wallet.Name, wallet.Currency, wallet.Id)
-
-	err := row.Scan(&wallet.Name, &wallet.Currency)
-	return err
+	result := s.db.Table("wallets").Save(wallet)
+	return result.Error
 }
 
 // Categories
 func (s *PostgresStorage) CreateCategory(category *models.Category) (id int64, err error) {
-	row := s.db.QueryRow("INSERT INTO categories (name, ownerid) VALUES ($1, $2) RETURNING id",
-		category.Name, category.OwnerId)
-	err = row.Scan(&id)
-	return
+	result := s.db.Table("categories").Create(&category)
+	return category.Id, result.Error
 }
 
 func (s *PostgresStorage) GetAllCategories(userId int64) ([]models.Category, error) {
 	categories := []models.Category{}
-	err := s.db.Select(&categories, "SELECT * FROM categories WHERE ownerid=$1", userId)
-	return categories, err
+	result := s.db.Table("categories").Where("ownerid = ?", userId).Find(&categories)
+	return categories, result.Error
 }
 
 func (s *PostgresStorage) GetCategoryById(categoryId int64) (*models.Category, error) {
 	category := models.Category{}
-	res := s.db.QueryRowx("SELECT * FROM categories WHERE id=$1", categoryId)
-	err := res.StructScan(&category)
-	return &category, err
+	result := s.db.Table("categories").First(&category, categoryId)
+	return &category, result.Error
 }
 
 func (s *PostgresStorage) UpdateCategory(category *models.Category) error {
-	row := s.db.QueryRow(
-		`UPDATE categories
-		 SET
-		 	name = COALESCE(NULLIF($1, ''), name)
-		 WHERE id=$2
-		 RETURNING name;`,
-		category.Name, category.Id)
-
-	err := row.Scan(&category.Name)
-	return err
+	result := s.db.Table("categories").Save(category)
+	return result.Error
 }
 
 func (s *PostgresStorage) DeleteCategory(categoryId int64) error {
-	_, err := s.db.Exec("DELETE FROM categories WHERE id=$1", categoryId)
-	return err
+	result := s.db.Table("categories").Delete(&models.Category{}, categoryId)
+	return result.Error
 }
 
 // Operations
 func (s *PostgresStorage) CreateOperation(operation *models.Operation) (id int64, err error) {
-	row := s.db.QueryRow(
-		`INSERT INTO operations (name, walletid, sum, date, place, categoryid) 
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		operation.Name, operation.WalletId, operation.Sum, operation.Date, operation.Place, operation.CategoryId)
-	err = row.Scan(&id)
-	return
+	result := s.db.Table("operations").Create(&operation)
+	return operation.Id, result.Error
 }
 
-func (s *PostgresStorage) GetOperationsByWalletId(walletId int64) ([]models.Operation, error) {
+func (s *PostgresStorage) GetOperations(walletId int64, sinceDate models.DateOnly, sortBy string) ([]models.Operation, error) {
 	operations := []models.Operation{}
-	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1 ORDER BY Date DESC", walletId)
-	return operations, err
-}
 
-func (s *PostgresStorage) GetOperationsSinceDateByWalletId(walletId int64, date time.Time) ([]models.Operation, error) {
-	operations := []models.Operation{}
-	err := s.db.Select(&operations,
-		`SELECT * FROM operations WHERE walletid=$1 AND date >= $2 ORDER BY Date DESC`,
-		walletId, date)
-	return operations, err
+	basicQuery := s.db.Table("operations").Where("walletid = ?", walletId)
+	if !sinceDate.IsZero() {
+		basicQuery = basicQuery.Where("date >= ?", sinceDate)
+	}
+	if len(sortBy) > 0 {
+		basicQuery = basicQuery.Order(sortBy + " DESC")
+	}
+	result := basicQuery.Find(&operations)
+
+	return operations, result.Error
 }
 
 func (s *PostgresStorage) GetOperationById(operationId int64) (*models.Operation, error) {
 	operation := models.Operation{}
-	res := s.db.QueryRowx("SELECT * FROM operations WHERE id=$1", operationId)
-	err := res.StructScan(&operation)
-	return &operation, err
+	result := s.db.Table("operations").First(&operation, operationId)
+	return &operation, result.Error
 }
 
 func (s *PostgresStorage) UpdateOperation(operation *models.Operation) error {
-	row := s.db.QueryRow(
-		`UPDATE operations
-		 SET
-		 	name = COALESCE(NULLIF($1, ''), name),
-		 	sum = COALESCE(NULLIF($2::FLOAT, 0.0), sum),
-		 	date = COALESCE(NULLIF($3, '')::DATE, date),
-			place = COALESCE(NULLIF($4, ''), place),
-		 	categoryid = COALESCE(NULLIF($5, 0), categoryid)
-		 WHERE id=$6
-		 RETURNING name, sum, date, place, categoryid;`,
-		operation.Name, operation.Sum, operation.Date, operation.Place, operation.CategoryId, operation.Id)
+	updates := map[string]interface{}{}
 
-	err := row.Scan(&operation.Name, &operation.Sum, &operation.Date, &operation.Place, &operation.CategoryId)
-	return err
+	if operation.Name != "" {
+		updates["name"] = operation.Name
+	}
+	if operation.Sum != 0.0 {
+		updates["sum"] = operation.Sum
+	}
+	if !operation.Date.IsZero() {
+		updates["date"] = operation.Date
+	}
+	if operation.Place != "" {
+		updates["place"] = operation.Place
+	}
+	if operation.CategoryId != 0 {
+		updates["categoryid"] = operation.CategoryId
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	result := s.db.Table("operations").Where("id = ?", operation.Id).Updates(updates)
+	return result.Error
 }
 
 func (s *PostgresStorage) DeleteOperation(operationId int64) error {
-	_, err := s.db.Exec("DELETE FROM operations WHERE id=$1", operationId)
-	return err
+	result := s.db.Table("operations").Delete(&models.Operation{}, operationId)
+	return result.Error
 }

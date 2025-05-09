@@ -3,7 +3,6 @@ package handlers
 import (
 	"finances-backend/models"
 	"strconv"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -36,21 +35,21 @@ func (h *Handler) GetOperations(c *fiber.Ctx) error {
 	}
 
 	sinceParam := c.Queries()["since"]
+	sortBy := c.Queries()["sortBy"]
 
 	userId := c.Locals("userId").(int64)
 
 	var operations []models.Operation
 
+	var sinceDate models.DateOnly
+
 	if len(sinceParam) > 9 { // DD-MM-YYYY
-		var sinceDate time.Time
-		sinceDate, err = time.Parse("02-01-2006", sinceParam)
+		sinceDate, err = models.ParseDateOnly(sinceParam)
 		if err != nil {
 			return h.sendError(c, ErrWrongFormat, err)
 		}
-		operations, err = h.operationSerivce.GetOperationsSinceDateByWalletId(int64(walletId), userId, sinceDate)
-	} else {
-		operations, err = h.operationSerivce.GetOperationsByWalletId(int64(walletId), userId)
 	}
+	operations, err = h.operationSerivce.GetOperations(userId, int64(walletId), sinceDate, sortBy)
 
 	if err != nil {
 		return h.sendError(c, ErrCannotGetOperations, err)
