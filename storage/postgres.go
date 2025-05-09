@@ -157,14 +157,14 @@ func (s *PostgresStorage) CreateOperation(operation *models.Operation) (id int64
 
 func (s *PostgresStorage) GetOperationsByWalletId(walletId int64) ([]models.Operation, error) {
 	operations := []models.Operation{}
-	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1", walletId)
+	err := s.db.Select(&operations, "SELECT * FROM operations WHERE walletid=$1 ORDER BY Date DESC", walletId)
 	return operations, err
 }
 
 func (s *PostgresStorage) GetOperationsSinceDateByWalletId(walletId int64, date time.Time) ([]models.Operation, error) {
 	operations := []models.Operation{}
 	err := s.db.Select(&operations,
-		`SELECT * FROM operations WHERE walletid=$1 AND date >= $2`,
+		`SELECT * FROM operations WHERE walletid=$1 AND date >= $2 ORDER BY Date DESC`,
 		walletId, date)
 	return operations, err
 }
