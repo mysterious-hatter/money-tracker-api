@@ -3,6 +3,8 @@
 Money-tracker API is a RESTful API for the [money-tracker](https://money-tracker.mysterious-hatter.engineer) - a service, that helps you control your budgets and gives you statistics for each of them. 
 This API is written on Go and uses PostgreSQL to store the data. In purpose of symplifying the CI/CD of this project I used Docker.
 Database - PostgeSQL with GORM
+## Docs
+The documentation for this API you can find [here](https://www.postman.com/mysterious-hatter/workspace/money-tracker-api).
 ## Latest updates
 - 04.05.2025 First public version
 - 09.05.2025 Switched to GORM
