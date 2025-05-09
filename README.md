@@ -1,6 +1,6 @@
 # Money-tracker API
 ## About this project
-Money-tracker API is a RESTful API for the [money-tracker](https://money-tracker.mysterious-hatter.engineer) - a service, that helps you control your budgets and gives you statistics for each of them.
+RESTful API for [money-tracker](https://money-tracker.mysterious-hatter.engineer) - service, that helps you control your budgets and gives you statistics for each of them.
 ## Stack
 - Go
 - Docker + Make
