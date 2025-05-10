@@ -11,6 +11,7 @@ var (
 	ErrOperationNotFound       error = errors.New("operation not found")
 	ErrConnectedWalletNotFound error = errors.New("connected wallet not found")
 	ErrNoOperationsFound       error = errors.New("no operations found")
+	ErrUnsupportedFilter       error = errors.New("unsupported filter")
 )
 
 type OperationService struct {
@@ -38,6 +39,9 @@ func (ops *OperationService) CreateOperation(operation *models.Operation, userId
 
 // walletId and userId are obligatory, sinceDate and sortBy are optional
 func (ops *OperationService) GetOperations(userId, walletId int64, sinceDate models.DateOnly, sortBy string) ([]models.Operation, error) {
+	if sortBy != "date" || sortBy != "sum" {
+		return nil, ErrUnsupportedFilter
+	}
 	// Check user's ownership of the wallet
 	err := ops.checkOwnershipByConnectedWallet(walletId, userId)
 	if err != nil {

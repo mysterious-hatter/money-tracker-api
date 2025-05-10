@@ -115,10 +115,10 @@ func (s *PostgresStorage) GetOperations(walletId int64, sinceDate models.DateOnl
 
 	basicQuery := s.db.Table("operations").Where("walletid = ?", walletId)
 	if !sinceDate.IsZero() {
-		basicQuery.Where("date >= ?", sinceDate)
+		basicQuery = basicQuery.Where("date >= ?", sinceDate)
 	}
 	if len(sortBy) > 0 {
-		basicQuery.Order(sortBy + " DESC")
+		basicQuery = basicQuery.Order(sortBy + " DESC")
 	}
 	result := basicQuery.Find(&operations)
 
