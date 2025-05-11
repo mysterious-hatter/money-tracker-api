@@ -48,8 +48,9 @@ func main() {
 	walletService := services.NewWalletService(storage)
 	categoryService := services.NewCategoryService(storage)
 	operationService := services.NewOperationService(storage)
+	searchService := services.NewSearchService(storage)
 
-	handler := handlers.NewHandler(*authService, *userService, *walletService, *categoryService, *operationService)
+	handler := handlers.NewHandler(*authService, *userService, *walletService, *categoryService, *operationService, *searchService)
 
 	// Initialize Fiber
 	app := fiber.New()
@@ -93,6 +94,9 @@ func main() {
 	autorizedGroup.Get("/operation/:id", handler.GetOperationById)
 	autorizedGroup.Patch("/operation/:id", handler.UpdateOperation)
 	autorizedGroup.Delete("/operation/:id", handler.DeleteOperation)
+
+	// Search
+	autorizedGroup.Get("/search/operation", handler.SearchOperations)
 
 	// Start the server
 	app.Listen(":3000")

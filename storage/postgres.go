@@ -2,6 +2,7 @@ package storage
 
 import (
 	"finances-backend/models"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -161,4 +162,35 @@ func (s *PostgresStorage) UpdateOperation(operation *models.Operation) error {
 func (s *PostgresStorage) DeleteOperation(operationId int64) error {
 	result := s.db.Table("operations").Delete(&models.Operation{}, operationId)
 	return result.Error
+}
+
+// Search
+func (s *PostgresStorage) SearchOperations(name string, walletId int64, date models.DateOnly,
+	place string, categoryId int64, sortBy string) ([]models.Operation, error) {
+	operations := []models.Operation{}
+
+	basicQuery := s.db.Table("operations")
+
+	if name != "" {
+		basicQuery = basicQuery.Where("LOWER(name) LIKE LOWER(?)", "%"+name+"%")
+	}
+	if walletId > 0 {
+		basicQuery = basicQuery.Where("walletid = ?", walletId)
+	}
+	if !date.IsZero() {
+		basicQuery = basicQuery.Where("date = ?", date)
+	}
+	if place != "" {
+		basicQuery = basicQuery.Where("LOWER(place) LIKE LOWER(?)", "%"+place+"%")
+	}
+	if categoryId > 0 {
+		basicQuery = basicQuery.Where("categoryid = ?", categoryId)
+	}
+
+	if len(sortBy) > 0 {
+		basicQuery = basicQuery.Order(sortBy + " DESC")
+	}
+	result := basicQuery.Find(&operations)
+
+	return operations, result.Error
 }

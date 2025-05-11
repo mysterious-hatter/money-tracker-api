@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"finances-backend/storage"
 )
 
 var (
@@ -17,5 +18,18 @@ func checkOwnership(ownerId, userId int64) error {
 	if ownerId != userId {
 		return ErrAccessDenied
 	}
+	return nil
+}
+
+func checkOwnershipByConnectedWallet(walletId, userId int64, storage storage.Storage) error {
+	connectedWallet, err := storage.GetWalletById(walletId)
+	if err != nil {
+		return ErrConnectedWalletNotFound
+	}
+	// Check user's ownership of the operation
+	if err := checkOwnership(connectedWallet.OwnerId, userId); err != nil {
+		return err
+	}
+
 	return nil
 }

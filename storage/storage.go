@@ -35,4 +35,8 @@ type Storage interface {
 	GetOperationById(operationId int64) (*models.Operation, error)
 	UpdateOperation(operation *models.Operation) error
 	DeleteOperation(operationId int64) error
+
+	// Search
+	SearchOperations(name string, walletId int64, date models.DateOnly,
+		place string, categoryId int64, sortBy string) ([]models.Operation, error)
 }

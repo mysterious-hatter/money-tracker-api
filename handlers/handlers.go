@@ -36,6 +36,8 @@ var (
 	ErrCannotGetOperations   error = errors.New("cannot get operations")
 	ErrCannotUpdateOperation error = errors.New("cannot update operation")
 	ErrCannotDeleteOperation error = errors.New("cannot delete operation")
+	// Search
+	ErrCannotSearch error = errors.New("cannot to search")
 )
 
 type ErrorResponse struct {
@@ -49,6 +51,7 @@ type Handler struct {
 	walletService    services.WalletService
 	categoryService  services.CategoryService
 	operationSerivce services.OperationService
+	searchService    services.SearchService
 	validate         *validator.Validate
 }
 
@@ -58,6 +61,7 @@ func NewHandler(
 	ws services.WalletService,
 	cs services.CategoryService,
 	ops services.OperationService,
+	ss services.SearchService,
 ) *Handler {
 	validate := validator.New()
 	err := validate.RegisterValidation("nonzero", func(fl validator.FieldLevel) bool {
@@ -73,6 +77,7 @@ func NewHandler(
 		walletService:    ws,
 		categoryService:  cs,
 		operationSerivce: ops,
+		searchService:    ss,
 		validate:         validate,
 	}
 }
