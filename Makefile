@@ -1,5 +1,5 @@
 pull:
-	@git pull origin main
+	@git pull origin master
 
 build_and_compose:
 	@docker compose up -d --build
